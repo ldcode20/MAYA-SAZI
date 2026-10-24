@@ -1,0 +1,13 @@
+# Data and models (too large for GitHub)
+data/*.csv
+data/smoke/
+models/*.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store

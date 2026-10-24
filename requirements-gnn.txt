@@ -1,0 +1,4 @@
+# Phase 7 GNN challenger only (CPU-only torch; heavy, demo-only).
+-r requirements.txt
+torch==2.14.1
+torch-geometric==2.8.1

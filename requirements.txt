@@ -1,0 +1,11 @@
+# Core pipeline + Streamlit UI. Pinned to the versions verified in .venv.
+# The Phase 7 GNN challenger needs extras: pip install -r requirements-gnn.txt
+numpy==2.5.4
+pandas==3.0.6
+networkx==3.7
+xgboost==3.4.1
+scikit-learn==1.9.1
+shap==0.54.1
+streamlit==1.66.0
+plotly==7.1.0
+jinja2==3.1.6
