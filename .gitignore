@@ -1,7 +1,9 @@
 # Data and models (too large for GitHub)
 data/*.csv
+data/*.parquet
 data/smoke/
 models/*.json
+data/*.sqlite*
 
 # Python
 __pycache__/
@@ -11,3 +13,11 @@ venv/
 
 # OS
 .DS_Store
+
+# Simulator runtime and scratch outputs
+tmp/
+data/simulator*.sqlite*
+data/evaluation*.json
+
+# Built website bundle (contains trained weights; deployed to the Space only)
+dist/
