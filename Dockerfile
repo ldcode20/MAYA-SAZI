@@ -13,5 +13,6 @@ COPY run_demo.py ./
 RUN python scripts/bootstrap_v4.py && python scripts/train_wallet_bundle.py && useradd --uid 10001 --create-home maya && chown -R maya:maya /app
 USER maya
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz',timeout=3)"
-CMD ["python","run_demo.py","--host","0.0.0.0","--port","8000"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s CMD python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/readyz' % os.getenv('PORT', '8000'), timeout=3)"
+# run_demo.py binds $PORT when the host sets it (Render), else 8000 (Compose/Caddy).
+CMD ["python","run_demo.py","--host","0.0.0.0"]
