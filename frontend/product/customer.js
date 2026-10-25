@@ -19,11 +19,39 @@ const words = {
     home: "Home",
     activity: "Activity",
     settings: "Settings",
-    title: "A little clarity.\nBefore you pay.",
+    title: "A little clarity\nbefore you pay.",
     scan: "Scan a QR",
     check: "Check a message",
     sandbox: "Try a payment",
-    demo: "Sandbox · Dummy money",
+    demo: "Practice money",
+    practice: "Practise a payment",
+    choose: "Pick a situation to practise with. The money here is pretend.",
+    situation: "Situation",
+    change: "Change situation",
+    makePayment: "Make a payment",
+    balance: "Practice balance",
+    preset_everyday: "Everyday payments",
+    preset_everyday_desc: "Family, rent and the corner shop. Nothing unusual in your history.",
+    preset_investment: "After a “stock tips” group",
+    preset_investment_desc: "A trader account paid you a small “profit”. Dozens of strangers also pay it, and it is linked to a reported account.",
+    preset_probes: "After tiny test payments",
+    preset_probes_desc: "The same trader, plus ₹1, ₹2 and ₹5 test payments sent to it minutes ago.",
+    preset_refund: "A refund that asks you to pay",
+    preset_refund_desc: "A stranger’s small credit and a message saying “approve to receive your refund”.",
+    heldUntil: "Held until",
+    practiceTime: "practice time",
+    skip: "Skip ahead 1 hour of practice time",
+    clockNote: "Practice time only. A real hold lasts a real hour.",
+    holdOver: "The hold has ended",
+    holdOverNote: "The hour has passed. Check the details once more before sending.",
+    sendAnyway: "Send dummy payment anyway",
+    analystWait: "This is over ₹1 lakh, so a bank analyst must approve this check before it can be sent.",
+    checkAgain: "Check again",
+    to: "To",
+    when: "When",
+    transfer: "Transfer ID",
+    scanToConnect: (where) => `Scan this with the other device, or open ${where} there and type the code.`,
+    expires: "The code works once and expires in 5 minutes.",
     start: "Start a fresh session",
     review: "Review payment",
     recipient: "Recipient",
@@ -89,7 +117,35 @@ const words = {
     scan: "QR स्कैन करें",
     check: "संदेश जाँचें",
     sandbox: "भुगतान आज़माएँ",
-    demo: "सैंडबॉक्स · नकली पैसे",
+    demo: "अभ्यास के पैसे",
+    practice: "भुगतान का अभ्यास करें",
+    choose: "अभ्यास के लिए एक स्थिति चुनें। यहाँ के पैसे नकली हैं।",
+    situation: "स्थिति",
+    change: "स्थिति बदलें",
+    makePayment: "भुगतान करें",
+    balance: "अभ्यास का बैलेंस",
+    preset_everyday: "रोज़ के भुगतान",
+    preset_everyday_desc: "परिवार, किराया और पास की दुकान। आपके इतिहास में कुछ असामान्य नहीं।",
+    preset_investment: "“स्टॉक टिप्स” ग्रुप के बाद",
+    preset_investment_desc: "एक ट्रेडर खाते ने आपको थोड़ा “मुनाफ़ा” भेजा। कई अजनबी भी उसे पैसे भेजते हैं, और वह एक रिपोर्ट किए गए खाते से जुड़ा है।",
+    preset_probes: "छोटे परीक्षण भुगतानों के बाद",
+    preset_probes_desc: "वही ट्रेडर, और कुछ मिनट पहले उसे भेजे गए ₹1, ₹2 और ₹5 के परीक्षण भुगतान।",
+    preset_refund: "रिफंड जिसके लिए भुगतान माँगा जाए",
+    preset_refund_desc: "किसी अजनबी का छोटा क्रेडिट और संदेश: “रिफंड पाने के लिए मंज़ूरी दें”।",
+    heldUntil: "तब तक रोका गया",
+    practiceTime: "अभ्यास का समय",
+    skip: "अभ्यास का समय 1 घंटा आगे करें",
+    clockNote: "यह केवल अभ्यास का समय है। असली रोक पूरे एक घंटे की होती है।",
+    holdOver: "रोक समाप्त हुई",
+    holdOverNote: "एक घंटा बीत गया। भेजने से पहले विवरण एक बार फिर जाँचें।",
+    sendAnyway: "फिर भी नकली भुगतान भेजें",
+    analystWait: "यह ₹1 लाख से अधिक है, इसलिए भेजने से पहले बैंक विश्लेषक की मंज़ूरी चाहिए।",
+    checkAgain: "फिर जाँचें",
+    to: "किसे",
+    when: "कब",
+    transfer: "ट्रांसफ़र ID",
+    scanToConnect: (where) => `दूसरे डिवाइस से इसे स्कैन करें, या वहाँ ${where} खोलकर कोड लिखें।`,
+    expires: "कोड एक बार चलता है और 5 मिनट में समाप्त हो जाता है।",
     start: "नया सत्र शुरू करें",
     review: "भुगतान की जाँच",
     recipient: "प्राप्तकर्ता",
@@ -195,24 +251,51 @@ const base = () => `/v1/sandbox/worlds/${world.id}`;
 async function reloadWorld() {
   if (world) world = await api(base());
 }
-function home() {
+// Practice situations map to the server's world presets. Presets change the
+// generated history only; every decision still comes from the live review.
+const PRESETS = ["everyday", "investment", "probes", "refund"];
+function choices() {
+  return `<p class="muted">${esc(t("choose"))}</p><div class="choices">${PRESETS.map(
+    (p) =>
+      `<button type="button" class="choice" data-preset="${p}"><strong>${esc(t("preset_" + p))}</strong><span>${esc(t("preset_" + p + "_desc"))}</span></button>`,
+  ).join("")}</div>`;
+}
+async function startWorld(preset) {
+  const previous = world?.id;
+  world = await api("/v1/sandbox/worlds", { preset });
+  payment = null;
+  review = null;
+  incomingScenario = null;
+  localStorage.setItem("maya-v4-world", world.id);
+  // Paired judge and recipient screens follow the customer to the new world.
+  if (previous)
+    await api(base() + "/observers/carry", { previous }).catch(() => {});
+}
+function home(choosing = false) {
+  const practice =
+    world && !choosing
+      ? `<div class="card soft"><div class="situation"><p class="eyebrow">${esc(t("situation"))}</p><button id="change" class="link" type="button">${esc(t("change"))}</button></div><h3>${esc(t("preset_" + (world.preset || "everyday")))}</h3><p class="muted">${esc(t("balance"))}</p><p class="balance">${esc(money(world.accounts[0].balance_paise))}</p>${button("sandbox", "makePayment")}</div>`
+      : choices();
   show(
-    `<section class="hero"><p class="eyebrow">PAYMENT SAFETY</p><h1>${esc(t("title")).replace("\n", "<br>")}</h1></section><div id="judge-scenario-callout"></div><div class="tiles"><button id="scan" class="tile"><span class="icon" aria-hidden="true">▦</span>${esc(t("scan"))}</button><button id="check" class="tile"><span class="icon" aria-hidden="true">↗</span>${esc(t("check"))}</button></div><section class="card soft"><span class="pill sandbox">${esc(t("demo"))}</span><h2>${esc(t("sandbox"))}</h2>${world ? `<p class="muted">${esc(money(world.accounts[0].balance_paise))}</p>` : ""}${button("sandbox", "sandbox")}</section>`,
+    `<section class="hero"><h1>${esc(t("title")).replace("\n", "<br>")}</h1></section><div id="judge-scenario-callout"></div><div class="tiles"><button id="scan" class="tile"><span class="icon" aria-hidden="true">▦</span>${esc(t("scan"))}</button><button id="check" class="tile"><span class="icon" aria-hidden="true">↗</span>${esc(t("check"))}</button></div><section class="section"><div class="row"><h2>${esc(t("practice"))}</h2><span class="pill sandbox">${esc(t("demo"))}</span></div>${practice}</section>`,
   );
   renderIncomingScenario();
   $("#scan").onclick = () => companion(true);
   $("#check").onclick = () => companion(false);
-  $("#sandbox").onclick = async () => {
-    try {
-      if (!world) {
-        world = await api("/v1/sandbox/worlds", {});
-        localStorage.setItem("maya-v4-world", world.id);
+  if ($("#sandbox")) $("#sandbox").onclick = edit;
+  if ($("#change")) $("#change").onclick = () => home(true);
+  document.querySelectorAll("[data-preset]").forEach((b) => {
+    b.onclick = async () => {
+      b.disabled = true;
+      try {
+        await startWorld(b.dataset.preset);
+        edit();
+      } catch (e) {
+        b.disabled = false;
+        error(e);
       }
-      edit();
-    } catch (e) {
-      error(e);
-    }
-  };
+    };
+  });
 }
 function renderIncomingScenario() {
   const box = $("#judge-scenario-callout");
@@ -274,7 +357,7 @@ function edit() {
         old && old.state === "pending" ? "PUT" : "POST",
       );
       review = await api(base() + `/intents/${payment.id}/review`, {});
-      outcome();
+      await showOutcome();
     } catch (e) {
       payment = old;
       edit();
@@ -282,6 +365,17 @@ function edit() {
     }
   };
 }
+// The hold lives on the server's payment record; read it rather than infer it.
+async function showOutcome() {
+  await reloadWorld();
+  outcome();
+}
+const clockTime = (seconds) =>
+  new Date(seconds * 1000).toLocaleTimeString(lang === "hi" ? "hi-IN" : "en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
 function outcome() {
   const action = review.decision.action;
   const label =
@@ -301,10 +395,55 @@ function outcome() {
                 ? "मॉडल निश्चित नहीं है। आगे बढ़ने से पहले प्राप्तकर्ता और राशि जाँचें।"
                 : s
       : s;
+  const record = world?.intents?.find((i) => i.id === payment.id);
+  const held =
+    !!record && record.state === "pending" && record.hold_revision === record.revision;
+  const holdOver = held && world.now >= record.hold_until;
+  const analystNeeded =
+    held &&
+    record.analyst_required &&
+    !(record.analyst_approved && record.analyst_review === review.id);
+  const tone = held ? "hold" : action;
+  const verdict = held ? (holdOver ? "holdOver" : "held") : label;
+  const mark = tone === "release" ? "✓" : tone === "hold" ? "‖" : "!";
+  let timer = "";
+  if (held && !holdOver)
+    timer = `<div class="hold-timer"><p><strong>${esc(t("heldUntil"))} ${esc(clockTime(record.hold_until))}</strong> <span class="muted">(${esc(t("practiceTime"))})</span></p><p class="muted">${esc(t("clockNote"))}</p></div>`;
+  else if (holdOver)
+    timer = `<div class="hold-timer"><p>${esc(analystNeeded ? t("analystWait") : t("holdOverNote"))}</p></div>`;
+  let actions;
+  if (!held)
+    actions = button("send", action === "nudge" ? "confirm" : "continue");
+  else if (!holdOver)
+    actions = button("skip", "skip", "quiet") + button("draft", "help", "quiet");
+  else if (analystNeeded)
+    actions = button("again", "checkAgain") + button("draft", "help", "quiet");
+  else actions = button("send", "sendAnyway");
   show(
-    `<span class="pill sandbox">${esc(t("demo"))}</span><div class="result-icon ${action}" aria-hidden="true">${action === "release" ? "✓" : action === "hold" ? "‖" : "!"}</div><h1>${esc(t(label))}</h1><p class="amount">${esc(money(payment.amount_paise))}</p><p>${esc(world.accounts.find((a) => a.id === payment.recipient)?.name)}</p><ul class="reasons">${reasons.map((s) => `<li>${esc(localReason(s))}</li>`).join("")}</ul><div class="stack">${action !== "hold" ? button("send", action === "nudge" ? "confirm" : "continue") : button("draft", "help", "quiet")}${button("edit", "edit", "quiet")}${button("cancel", "cancel", "danger")}</div>`,
+    `<span class="pill sandbox">${esc(t("demo"))}</span><article class="slip ${tone}" aria-labelledby="verdict"><div class="slip-band" aria-hidden="true"></div><div class="slip-body"><h1 id="verdict" class="verdict"><span class="mark" aria-hidden="true">${mark}</span>${esc(t(verdict))}</h1><p class="amount">${esc(money(payment.amount_paise))}</p><p class="payee">${esc(world.accounts.find((a) => a.id === payment.recipient)?.name)}</p>${reasons.length ? `<ul class="reasons">${reasons.map((s) => `<li>${esc(localReason(s))}</li>`).join("")}</ul>` : ""}${timer}</div></article><div class="stack">${actions}${button("edit", "edit", "quiet")}${button("cancel", "cancel", "danger")}</div>`,
   );
-  announce(t(label));
+  announce(t(verdict));
+  if ($("#skip"))
+    $("#skip").onclick = async () => {
+      $("#skip").disabled = true;
+      try {
+        await api(base() + "/clock", { seconds: 3600 });
+        // Moving the clock changes the evidence window, so the old check is stale.
+        review = await api(base() + `/intents/${payment.id}/review`, {});
+        await showOutcome();
+      } catch (e) {
+        $("#skip").disabled = false;
+        error(e);
+      }
+    };
+  if ($("#again"))
+    $("#again").onclick = async () => {
+      try {
+        await showOutcome();
+      } catch (e) {
+        error(e);
+      }
+    };
   if ($("#send"))
     $("#send").onclick = async () => {
       const b = $("#send");
@@ -312,7 +451,7 @@ function outcome() {
       try {
         receipt = await api(base() + `/intents/${payment.id}/execute`, {
           review_id: review.id,
-          confirmed: action === "nudge",
+          confirmed: action === "nudge" || held,
           authorization: "DEMO",
         });
         payment = null;
@@ -336,8 +475,9 @@ function outcome() {
   };
 }
 function showReceipt() {
+  const to = world.accounts.find((a) => a.id === receipt.recipient);
   show(
-    `<span class="pill sandbox">${esc(t("demo"))}</span><div class="result-icon release" aria-hidden="true">✓</div><h1>${esc(t("sent"))}</h1><p class="amount">${esc(money(receipt.amount_paise))}</p><p>${esc(world.accounts.find((a) => a.id === receipt.recipient)?.name)}</p><div class="card"><p class="muted">${esc(t("status"))}: ${esc(receipt.state)}</p><p class="muted number">${esc(receipt.id)}</p></div>${button("new", "new")}`,
+    `<span class="pill sandbox">${esc(t("demo"))}</span><article class="slip release" aria-labelledby="verdict"><div class="slip-band" aria-hidden="true"></div><div class="slip-body"><h1 id="verdict" class="verdict"><span class="mark" aria-hidden="true">✓</span>${esc(t("sent"))}</h1><p class="amount">${esc(money(receipt.amount_paise))}</p><p class="payee">${esc(to?.name)}</p><dl><dt>${esc(t("to"))}</dt><dd>${esc(to?.vpa)}</dd><dt>${esc(t("when"))}</dt><dd>${esc(clockTime(receipt.timestamp))} (${esc(t("practiceTime"))})</dd><dt>${esc(t("status"))}</dt><dd>${esc(receipt.state)}</dd><dt>${esc(t("transfer"))}</dt><dd class="number">${esc(receipt.id)}</dd></dl></div></article>${button("new", "new")}`,
   );
   announce(t("sent"));
   $("#new").onclick = edit;
@@ -355,8 +495,13 @@ async function pair(role) {
       role,
       account: Number($("#recipient")?.value || world.default_recipient),
     });
+    // The QR opens the viewer page on the other device with the one-time code;
+    // that page exchanges it for its own HttpOnly grant and strips it from the URL.
+    const link = `${location.origin}${grant.url}?code=${encodeURIComponent(grant.code)}`;
+    $("#pair-qr").innerHTML = qrSvg(link);
+    $("#pair-qr").hidden = !$("#pair-qr").innerHTML;
     $("#pair-code").textContent = grant.code;
-    $("#pair-help").textContent = `${location.origin}${grant.url} · 5 min`;
+    $("#pair-help").textContent = `${words[lang].scanToConnect(location.host + grant.url)} ${t("expires")}`;
     $("#pair-dialog").showModal();
     $("#copy-code").onclick = () =>
       navigator.clipboard
@@ -368,6 +513,14 @@ async function pair(role) {
   }
 }
 $("#close-dialog").onclick = () => $("#pair-dialog").close();
+// qrcode.js (MIT, vendored in /static) is a classic script that sets window.qrcode.
+function qrSvg(text) {
+  if (typeof window.qrcode !== "function") return "";
+  const qr = window.qrcode(0, "M");
+  qr.addData(text);
+  qr.make();
+  return qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+}
 async function draft() {
   try {
     const d = await api(base() + "/cases", { review_id: review.id });
@@ -422,15 +575,15 @@ function settings() {
       error(e);
     }
   };
-  $("#fresh").onclick = async () => {
-    try {
-      world = await api("/v1/sandbox/worlds", {});
-      payment = null;
-      localStorage.setItem("maya-v4-world", world.id);
-      edit();
-    } catch (e) {
-      error(e);
-    }
+  $("#fresh").onclick = () => {
+    document
+      .querySelectorAll("[data-nav]")
+      .forEach((x) =>
+        x.dataset.nav === "home"
+          ? x.setAttribute("aria-current", "page")
+          : x.removeAttribute("aria-current"),
+      );
+    home(true);
   };
 }
 function stopCamera() {
@@ -458,6 +611,38 @@ function parseUPI(s) {
     throw new Error(t("invalid"));
   return { recipient: pa, amount: Math.round(Number(am) * 100) };
 }
+// Reads a pasted message in this browser only and returns three labels; the text
+// itself is never sent. It is a small, deliberately narrow rule set (English,
+// some Hindi): anything it does not recognise stays "unknown", and the check
+// then says it has limited information rather than guessing.
+const RECEIVE_AFTER_ACTION =
+  /\b(approve|accept|authori[sz]e|confirm|enter (your )?(upi )?pin|scan)\b.{0,60}\b(to|for|and) (receive|get|claim|collect)\b/;
+const ACTION_AFTER_RECEIVE =
+  /\b(receive|get|claim|collect)\b.{0,40}\b(refund|cashback|prize|reward|money|amount|payment)\b.{0,60}\b(approve|accept|enter (your )?(upi )?pin|scan)\b/;
+const WITHDRAW_FUNDS =
+  /\b(withdraw(al)?|unlock|release|redeem)\b.{0,50}\b(profits?|funds?|investment|earnings|returns|amount|money|balance)\b/;
+const FEE_BEFORE_WITHDRAW =
+  /\b(fee|tax|gst|charges?|commission|deposit)\b.{0,50}\b(withdraw(al)?|unlock|release|profits?|earnings|returns)\b/;
+const WITHDRAW_BEFORE_FEE =
+  /\b(profits?|earnings|returns|withdraw(al)?)\b.{0,50}\b(fee|tax|gst|charges?|commission)\b/;
+const HI_RECEIVE = /(पाने|प्राप्त करने|लेने) के लिए/;
+const HI_WITHDRAW = /(निकासी|मुनाफ़े|मुनाफे|प्रॉफिट).{0,30}(शुल्क|फीस|टैक्स|भुगतान)/;
+function deriveIntent(text) {
+  const s = text.toLowerCase().replace(/\s+/g, " ");
+  const incoming =
+    RECEIVE_AFTER_ACTION.test(s) || ACTION_AFTER_RECEIVE.test(s) || HI_RECEIVE.test(text);
+  const withdrawal =
+    WITHDRAW_FUNDS.test(s) ||
+    FEE_BEFORE_WITHDRAW.test(s) ||
+    WITHDRAW_BEFORE_FEE.test(s) ||
+    HI_WITHDRAW.test(text);
+  const refund = /\brefund\b|रिफंड/.test(s);
+  return {
+    direction: incoming ? "incoming" : "unknown",
+    purpose: withdrawal ? "withdrawal" : incoming && refund ? "refund" : "unknown",
+    operation: "transfer",
+  };
+}
 function companion(scan) {
   show(
     `<button id="back" class="quiet">← ${esc(t("back"))}</button><section class="section"><h1>${esc(t("checkTitle"))}</h1><label for="message">${esc(t("paste"))}</label><textarea id="message" maxlength="2000"></textarea><p class="muted">${esc(t("private"))}</p><div class="stack">${button("analyse", "analyse")}${scan ? button("camera", "camera", "quiet") + `<label for="image">${esc(t("upload"))}</label><input type="file" id="image" accept="image/*"><video id="camera-view" muted playsinline hidden></video>` : ""}</div><details class="section"><summary>${esc(t("whatLeft"))}</summary><pre id="outbound-payload">Nothing sent.</pre></details><div id="check-result" class="section" aria-live="polite"></div></section>`,
@@ -474,19 +659,7 @@ function companion(scan) {
         return error(e);
       }
     }
-    const lower = raw.toLowerCase();
-    const body = {
-      direction: /^approve to receive (?:a |your )?refund[.!]?$/.test(lower)
-        ? "incoming"
-        : "unknown",
-      purpose:
-        /^pay (?:₹|rs\.?\s*)?[\d,]+ to release your investment withdrawal[.!]?$/.test(
-          lower,
-        )
-          ? "withdrawal"
-          : "unknown",
-      operation: "transfer",
-    };
+    const body = deriveIntent(raw);
     try {
       $("#outbound-payload").textContent = JSON.stringify(body, null, 2);
       const r = await api("/v1/checks", body);

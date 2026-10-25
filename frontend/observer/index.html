@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>MAYA · Live observation</title>
+    <title>MAYA · Live view</title>
+    <link rel="icon" href="/product-static/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/product-static/product.css" />
     <script type="module" src="observer.js"></script>
   </head>
@@ -13,15 +14,18 @@
       <header class="header">
         <a class="brand" href="/app/">MAYA<span class="brand-dot">●</span></a>
         <div class="row">
-          <span class="badge">SCENARIO INPUT · NO PAYMENT CONTROL</span
-          ><span class="pill sandbox">SANDBOX · DUMMY MONEY</span
+          <span class="badge">View only. Cannot approve payments</span
+          ><span class="pill sandbox">Practice money</span
           ><span id="connection" role="status">Not connected</span>
         </div>
       </header>
       <main id="main" tabindex="-1">
         <section id="pairing" class="card">
-          <p class="eyebrow">A SEPARATE VIEW OF THE SAME PAYMENT</p>
-          <h1>Watch it happen.</h1>
+          <h1>Watch the payment from here.</h1>
+          <p class="muted">
+            Scan the QR on the customer's phone, or type the code it shows.
+            This screen follows that payment and can never approve one.
+          </p>
           <form id="pair-form">
             <label for="code">Pairing code from the customer device</label
             ><input
@@ -47,8 +51,8 @@
             <div>
               <section id="summary" class="card"></section>
               <section class="card">
-                <p class="eyebrow">ACTUAL EXECUTION</p>
-                <h2>From intent to outcome</h2>
+                <h2>What the server did</h2>
+                <p class="muted">Each step and its measured time, as it happens.</p>
                 <div id="stages" class="stages"></div>
               </section>
               <section class="card">
@@ -81,8 +85,11 @@
             </aside>
           </div>
           <section id="scenario-editor" class="card" hidden>
-            <p class="eyebrow">JUDGE-CHOSEN INPUT</p>
-            <h2>Send a new scenario to the paired customer</h2>
+            <h2>Try your own payment</h2>
+            <p class="muted">
+              Pick a recipient, amount and context. It appears on the customer's
+              phone, and they decide whether to send it.
+            </p>
             <form id="scenario-form">
               <label for="scenario-recipient">Synthetic recipient</label>
               <select id="scenario-recipient" required></select>

@@ -15,7 +15,7 @@ const pct = (n) => (100 * n).toFixed(1) + "%";
   let html = "";
   const p = b.reports.paysim;
   if (p) {
-    html += `<section class="benchmark"><span class="pill">PUBLIC SYNTHETIC MOBILE-MONEY DATA</span><h2>PaySim · ${Number(p.actual_rows).toLocaleString()} rows</h2><p>Held-out test: ${p.splits.test.rows.toLocaleString()} transactions, ${p.splits.test.positives} fraud labels.</p><table class="feature-table"><thead><tr><th>Model</th><th>PR-AUC</th><th>Recall</th><th>Benign intervention</th></tr></thead><tbody>${Object.entries(
+    html += `<section class="benchmark"><span class="pill">Public synthetic mobile-money data</span><h2>PaySim · ${Number(p.actual_rows).toLocaleString()} rows</h2><p>Held-out test: ${p.splits.test.rows.toLocaleString()} transactions, ${p.splits.test.positives} fraud labels.</p><table class="feature-table"><thead><tr><th>Model</th><th>PR-AUC</th><th>Recall</th><th>Benign intervention</th></tr></thead><tbody>${Object.entries(
       p.candidates,
     )
       .map(

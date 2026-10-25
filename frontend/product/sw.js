@@ -1,4 +1,4 @@
-const VERSION = "maya-v4-shell-1";
+const VERSION = "maya-v4-shell-2";
 const SHELL = [
   "/app/",
   "/product-static/product.css",

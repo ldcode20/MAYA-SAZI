@@ -27,7 +27,7 @@ const path = require("path");
   fs.mkdirSync("reports/screenshots", { recursive: true });
   try {
     await customer.goto(origin + "/app/");
-    await customer.locator("#sandbox").click();
+    await customer.locator("[data-preset=everyday]").click();
     await customer.locator("#recipient").selectOption("1");
     await customer.locator("#amount").fill("100.00");
     await customer.locator("#pair").click();
@@ -42,10 +42,13 @@ const path = require("path");
     await customer.locator("#pair-dialog").waitFor({ state: "visible" });
     const recipientCode = await customer.locator("#pair-code").innerText();
     await customer.locator("#close-dialog").click();
-    await recipient.goto(origin + "/recipient/");
-    await recipient.locator("#code").fill(recipientCode);
-    await recipient.locator("#pair-form button").click();
+    // The recipient pairs through the QR link (code in the URL), not by typing.
+    await recipient.goto(
+      origin + "/recipient/?code=" + encodeURIComponent(recipientCode),
+    );
     await recipient.locator("#dashboard").waitFor({ state: "visible" });
+    if (new URL(recipient.url()).search)
+      throw Error("Pairing code left in the recipient's address bar");
     await customer.locator("#payment-form button[type=submit]").click();
     await customer.locator("#send").waitFor({ timeout: 20000 });
     await customer.screenshot({
@@ -57,12 +60,17 @@ const path = require("path");
       .locator("h1")
       .filter({ hasText: "Dummy payment completed" })
       .waitFor();
+    // One transfer ID, from the ledger, on all three devices.
+    const transferId = (
+      await customer.locator(".slip dd.number").innerText()
+    ).trim();
     await judge
-      .getByText("Confirmed sandbox transfer", { exact: true })
+      .locator("#summary")
+      .getByText(transferId, { exact: true })
       .waitFor({ timeout: 15000 });
     await recipient
       .locator("#dashboard")
-      .getByText("Confirmed", { exact: true })
+      .getByText(transferId, { exact: true })
       .waitFor({ timeout: 15000 });
     await customer.screenshot({
       path: "reports/screenshots/customer-receipt.png",
@@ -82,6 +90,38 @@ const path = require("path");
       )
     )
       throw Error("Customer horizontal overflow");
+    // A held payment: practice time moves on, the payment is checked again,
+    // and only then can it be sent with explicit confirmation.
+    await customer.locator("[data-nav=settings]").click();
+    await customer.locator("#fresh").click();
+    await customer.locator("[data-preset=probes]").click();
+    await customer.locator("#recipient").selectOption("4");
+    await customer.locator("#amount").fill("30000.00");
+    await customer.locator("#payment-form button[type=submit]").click();
+    await customer.locator("#skip").waitFor({ timeout: 20000 });
+    await customer.screenshot({
+      path: "reports/screenshots/customer-hold.png",
+      fullPage: true,
+    });
+    await customer.locator("#skip").click();
+    await customer.locator("#send").waitFor({ timeout: 20000 });
+    await customer.locator("#send").click();
+    await customer
+      .locator("h1")
+      .filter({ hasText: "Dummy payment completed" })
+      .waitFor();
+    // The judge screen followed the customer into the new practice world.
+    const heldTransfer = (
+      await customer.locator(".slip dd.number").innerText()
+    ).trim();
+    await judge
+      .locator("#summary")
+      .getByText(heldTransfer, { exact: true })
+      .waitFor({ timeout: 20000 });
+    await judge.screenshot({
+      path: "reports/screenshots/judge-after-hold.png",
+      fullPage: true,
+    });
     await customer.locator("[data-nav=home]").click();
     await customer.locator("#check").click();
     const canary = "PRIVATE-CANARY-BROWSER-179284";
@@ -111,6 +151,10 @@ const path = require("path");
             "three isolated contexts",
             "live observation",
             "ledger-backed recipient receipt",
+            "same transfer ID on customer, judge and recipient",
+            "judge follows the customer to a new practice world",
+            "QR-link pairing strips the code from the URL",
+            "hold ends on practice time and needs a fresh check",
             "raw-text network canary",
             "revocation",
             "390px overflow",

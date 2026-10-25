@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>MAYA · Operator review</title>
+    <link rel="icon" href="/product-static/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/product-static/product.css" />
     <script type="module" src="operator.js"></script>
   </head>
@@ -12,12 +13,15 @@
     <div class="observer">
       <header class="header">
         <a class="brand" href="/app/">MAYA<span class="brand-dot">●</span></a>
-        <span class="badge">INDEPENDENT OPERATOR</span>
+        <span class="badge">Bank analyst console</span>
       </header>
       <main id="main" tabindex="-1">
         <section id="login" class="card">
-          <p class="eyebrow">REVIEW ACCESS</p>
-          <h1>Operator sign-in</h1>
+          <h1>Analyst sign-in</h1>
+          <p class="muted">
+            Use the operator key from the server's settings (on Render:
+            Environment, MAYA_OPERATOR_KEY).
+          </p>
           <form id="login-form">
             <label for="operator-key">Operator key</label>
             <input id="operator-key" type="password" autocomplete="current-password" required />
@@ -27,7 +31,7 @@
         </section>
         <section id="queue-view" hidden>
           <div class="row"><h1>Held payments</h1><button id="refresh" class="quiet">Refresh</button></div>
-          <p class="muted">Synthetic sandbox cases over INR 1 lakh. Approval does not bypass the hold timer.</p>
+          <p class="muted">Practice payments over ₹1 lakh that are held. Approving does not end the hold early: the customer can send once the hold's hour has passed and they have checked the payment again.</p>
           <section id="cases" class="stack"></section>
           <h2>Decision audit</h2>
           <section id="audit" class="stack"></section>

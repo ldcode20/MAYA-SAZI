@@ -21,6 +21,9 @@ let data = null,
   stages = [],
   busy = false,
   refreshTimer = null;
+// Until this device has paired (or found an existing grant), a refused
+// /v1/observe just means "not connected yet", not an error to show.
+let paired = false;
 let followLatest = true,
   activePayment = null,
   activeEvaluation = null;
@@ -39,14 +42,18 @@ function fail(e) {
   $("#error").hidden = false;
   $("#error").textContent = e.message;
 }
+async function pairWith(code) {
+  await api("/v1/observe/pair", { code });
+  paired = true;
+  sessionStorage.removeItem("maya-v4-event-cursor");
+  stages = [];
+  selected = null;
+  await connect();
+}
 $("#pair-form").onsubmit = async (e) => {
   e.preventDefault();
   try {
-    await api("/v1/observe/pair", { code: $("#code").value.trim() });
-    sessionStorage.removeItem("maya-v4-event-cursor");
-    stages = [];
-    selected = null;
-    await connect();
+    await pairWith($("#code").value.trim());
   } catch (e) {
     fail(e);
   }
@@ -56,15 +63,12 @@ async function refresh() {
   busy = true;
   try {
     data = await api("/v1/observe");
+    paired = true;
     $("#pairing").hidden = true;
     $("#dashboard").hidden = false;
     $("#error").hidden = true;
     if (data.role === "recipient") {
       renderRecipient();
-      return;
-    }
-    if (data.role === "contact") {
-      renderContact();
       return;
     }
     if (data.role === "contact") {
@@ -88,8 +92,12 @@ async function refresh() {
       null;
     render();
   } catch (e) {
-    $("#connection").textContent = "Access unavailable";
     stream?.close();
+    if (!paired) {
+      $("#connection").textContent = "Not connected";
+      return;
+    }
+    $("#connection").textContent = "Access unavailable";
     fail(e);
   } finally {
     busy = false;
@@ -106,10 +114,22 @@ async function connect() {
       "/v1/observe/events?after=" + encodeURIComponent(cursor),
     );
     stream.onopen = () => {
-      $("#connection").textContent = "Connected · live";
+      $("#connection").textContent = "Live";
     };
     stream.onmessage = (e) => {
       const event = JSON.parse(e.data);
+      if (event.stage === "world_changed") {
+        // The customer started a new practice world; follow it from scratch.
+        stages = [];
+        selected = null;
+        followLatest = true;
+        activePayment = activeEvaluation = null;
+        const select = $("#scenario-recipient");
+        if (select) select.replaceChildren();
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(refresh, 80);
+        return;
+      }
       sessionStorage.setItem("maya-v4-event-cursor", e.lastEventId);
       stages.push(event);
       if (stages.length > 300) stages.shift();
@@ -140,7 +160,7 @@ async function connect() {
       $("#connection").textContent = "Reconnecting…";
     };
   } else {
-    $("#connection").textContent = data.role === "contact" ? "Connected · trusted contact" : "Connected · recipient";
+    $("#connection").textContent = data.role === "contact" ? "Connected as trusted contact" : "Connected as recipient";
     refreshTimer = setInterval(refresh, 2000);
   }
 }
@@ -229,8 +249,15 @@ function render() {
   const r = selected,
     a = r.decision.action;
   const transfer = data.transfers.find((t) => t.review_id === r.id);
+  const name = data.accounts?.find((x) => x.id === r.recipient)?.name || `Recipient ${r.recipient}`;
+  const word =
+    ({ release: "Released", nudge: "Warned", hold: "Held" }[a] || a) +
+    (transfer && a !== "release" ? ", then sent" : "");
+  $("#summary").className = `card ${a}`;
+  // The transfer ID is the one the customer's receipt and the recipient show;
+  // the review ID identifies this check. Both are listed so they can be matched.
   $("#summary").innerHTML =
-    `<span class="pill ${a}">${esc(a.toUpperCase())}</span><p class="amount">${esc(money(r.amount_paise))}</p><p>Recipient #${esc(r.recipient)} · revision ${esc(r.revision)}</p><p>${transfer ? "<strong>Confirmed sandbox transfer</strong>" : "Review complete · no confirmed transfer for this review"}</p><small class="number">${esc(r.id)}</small>`;
+    `<span class="pill ${a}">${esc(word)}</span><p class="amount">${esc(money(r.amount_paise))}</p><p class="payee">${esc(name)}</p><p>${transfer ? "<strong>Sent. The ledger recorded this transfer.</strong>" : "Checked. No money has moved for this check."}</p><dl class="ids">${transfer ? `<dt>Transfer ID</dt><dd>${esc(transfer.id)}</dd>` : ""}<dt>Check ID</dt><dd>${esc(r.id)}</dd><dt>Revision</dt><dd>${esc(r.revision)}</dd></dl>`;
   $("#evidence").innerHTML =
     `<ul class="reasons">${r.decision.reasons.map((s) => `<li>${esc(s)}</li>`).join("")}</ul><p>Prediction set: <strong>${esc(r.model.uncertainty)}</strong></p><p>Model score: <strong>${Number(r.model.score).toFixed(4)}</strong></p><p class="muted">${esc(r.graph_convention)}</p><p>Groups: ${Object.entries(
       r.groups,
@@ -240,7 +267,7 @@ function render() {
   $("#history").innerHTML = data.reviews
     .map(
       (x) =>
-        `<button class="quiet" data-review="${esc(x.id)}">${esc(money(x.amount_paise))} · ${esc(x.decision.action)} · ${esc(x.id.slice(0, 6))}</button>`,
+        `<button class="quiet" data-review="${esc(x.id)}">${esc(money(x.amount_paise))}, ${esc(x.decision.action)} <span class="muted">${esc(x.id.slice(0, 6))}</span></button>`,
     )
     .join("");
   document.querySelectorAll("[data-review]").forEach(
@@ -271,14 +298,14 @@ function render() {
 }
 function renderRecipient() {
   const main = $("#dashboard");
-  main.innerHTML = `<span class="pill sandbox">SANDBOX · DUMMY MONEY</span><h1>${esc(data.recipient)}</h1><p class="muted">Current dummy balance</p><p class="amount">${esc(money(data.balance_paise))}</p><h2>Confirmed incoming payments</h2>${data.transfers.length ? data.transfers.map((t) => `<section class="card"><span class="pill release">Confirmed</span><h2>${esc(money(t.amount_paise))}</h2><p class="muted">${esc(t.id)}</p></section>`).join("") : "<p>Waiting for an incoming payment.</p>"}`;
+  main.innerHTML = `<span class="pill sandbox">Practice money</span><h1>${esc(data.recipient)}</h1><p class="muted">Balance</p><p class="amount">${esc(money(data.balance_paise))}</p><h2>Money received</h2><p class="muted">Only payments the ledger has recorded appear here. A screenshot or a "payment successful" message cannot add one.</p>${data.transfers.length ? data.transfers.map((t) => `<section class="card"><span class="pill release">Received</span><h2>${esc(money(t.amount_paise))}</h2><dl class="ids"><dt>Transfer ID</dt><dd>${esc(t.id)}</dd></dl></section>`).join("") : "<p>Nothing received yet. This updates on its own.</p>"}`;
 }
 function renderContact() {
   $("#pairing").hidden = true;
   $("#dashboard").hidden = false;
   $("#scenario-editor").hidden = true;
   $("#headline").textContent = "Trusted-contact requests";
-  $("#summary").innerHTML = `<span class="pill sandbox">SANDBOX</span><h2>Advice only</h2><p>A response is recorded for the customer. It cannot approve or release a payment.</p>`;
+  $("#summary").innerHTML = `<span class="pill sandbox">Practice money</span><h2>Advice only</h2><p>Your answer is shown to the person paying. It cannot approve or release a payment.</p>`;
   $("#evidence").textContent = "Only a payment hold and masked payment details are shown here.";
   $("#stages").replaceChildren();
   $("#history").innerHTML = data.alerts.length ? data.alerts.map((a) =>
@@ -353,6 +380,14 @@ window.addEventListener("pagehide", () => {
 });
 const evidenceLink = document.createElement("a");
 evidenceLink.href = "/demo/benchmarks.html";
-evidenceLink.textContent = "Validation evidence";
+evidenceLink.textContent = "Evidence";
 document.querySelector(".header").append(evidenceLink);
-connect().catch(() => {});
+// Opened from the customer's QR: exchange the one-time code for this device's
+// own HttpOnly grant, then drop it from the address bar and history.
+const qrCode = new URLSearchParams(location.search).get("code");
+if (qrCode) {
+  history.replaceState(null, "", location.pathname);
+  pairWith(qrCode.trim()).catch(fail);
+} else {
+  connect().catch(() => {});
+}
