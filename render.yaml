@@ -1,0 +1,31 @@
+# Render Blueprint: the MAYA V4 product as one free Docker web service.
+# render.com -> New -> Blueprint -> pick this repository -> Apply.
+# The image trains its own synthetic demo bundle during the build (about a
+# minute), so no model weights live in Git. See docs/DEPLOY_RENDER.md.
+services:
+  - type: web
+    name: maya-sazi
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /readyz
+    autoDeploy: true
+    envVars:
+      # Production mode: Secure cookies, HSTS, no /api/docs. The public origin
+      # defaults to Render's RENDER_EXTERNAL_URL; set MAYA_PUBLIC_ORIGIN to
+      # override it (for example with a custom domain).
+      - key: MAYA_ENV
+        value: production
+      # Render generates these once and keeps them; they never enter Git.
+      - key: MAYA_SESSION_SECRET
+        generateValue: true
+      # Copy this value from the Render dashboard to sign in at /operator/.
+      - key: MAYA_OPERATOR_KEY
+        generateValue: true
+      # Render's proxy appends the client address to X-Forwarded-For; rate
+      # limits use only that right-most entry, never client-supplied ones.
+      - key: MAYA_TRUST_FORWARDED_FOR
+        value: "1"
+      # Phones and judge screens share one small instance during a demo.
+      - key: MAYA_REQUESTS_PER_MINUTE
+        value: "1200"

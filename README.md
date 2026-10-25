@@ -296,9 +296,11 @@ python scripts/train_wallet_bundle.py
 python run_demo.py --port 8000
 ```
 
-Open `http://127.0.0.1:8000/app/` for the customer experience. Other available screens are `/demo/` (observer), `/recipient/` (recipient), `/contact/` (trusted contact) and `/operator/` (operator). Their pairing and access rules are different from the public website's simple six-character demo rooms.
+Open `http://127.0.0.1:8000/app/` for the customer experience and pick a practice situation (everyday payments, a "stock tips" group, tiny test payments or a refund trick). Other available screens are `/demo/` (observer), `/recipient/` (recipient), `/contact/` (trusted contact) and `/operator/` (operator). Pair them by scanning the QR on the customer's payment screen or typing its 12-character code. Their pairing and access rules are different from the public website's simple six-character demo rooms. A held payment ends on its practice world's simulated clock ("Skip ahead 1 hour of practice time"), then needs a fresh check and, over ₹1 lakh, operator approval.
 
-For a separate public V4 deployment, MAYA-SAZI includes **Docker Compose, PostgreSQL and Caddy HTTPS**. That path requires a Linux host, a domain you control, DNS, persistent secrets and an actual deployment rehearsal. Read the [V4 deployment guide](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/DEPLOY_V4.md). It is not the same deployment procedure as the `maya-site` Render Blueprint.
+**MAYA-SAZI on its own website.** This repository's [`render.yaml`](./render.yaml) deploys the V4 sandbox to Render's free tier as one Docker service with its own `https://…onrender.com` address, so judges can use their own phones on any network. The image trains its synthetic bundle while building, and Render generates the session and operator secrets. See [Deploy MAYA-SAZI on Render](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/DEPLOY_RENDER.md).
+
+For a self-managed server, MAYA-SAZI also includes **Docker Compose, PostgreSQL and Caddy HTTPS**. That path requires a Linux host, a domain you control, DNS, persistent secrets and an actual deployment rehearsal. Read the [V4 deployment guide](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/DEPLOY_V4.md).
 
 ## API at a glance
 
@@ -370,7 +372,8 @@ The goal is to make payment-risk reasoning and user protection **clear, conserva
 - **Expanded product and research:** [ldcode20/MAYA-SAZI](https://github.com/ldcode20/MAYA-SAZI)
 - **Risk-scoring API:** [API documentation](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/API.md)
 - **Website deployment reference:** [Deploy the demo](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/DEPLOY_SPACE.md)
-- **Full sandbox deployment:** [Deploy MAYA V4](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/DEPLOY_V4.md)
+- **Sandbox on its own website (Render):** [Deploy MAYA-SAZI on Render](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/DEPLOY_RENDER.md)
+- **Full sandbox deployment (self-managed):** [Deploy MAYA V4](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/DEPLOY_V4.md)
 - **Feature definitions and evidence:** [Feature contract](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/FEATURE_CONTRACT.md) · [Evaluation and limits](https://github.com/ldcode20/MAYA-SAZI/blob/main/docs/RUBRIC_DELIVERY.md)
 
 ---

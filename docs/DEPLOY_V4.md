@@ -18,13 +18,19 @@ cd C:\Users\ashrith\Downloads\Projects\raksham\MAYA-SAZI
 .\.venv\Scripts\python.exe run_demo.py --port 8000
 ```
 
-Open `/app/`, `/demo/`, `/recipient/`, `/contact/` and `/operator/`. Judge and recipient views use scoped pairing codes; contact pairing additionally requires explicit consent. Codes expire in five minutes; access expires after 30 minutes and is revocable. The judge can submit a new sandbox scenario to the customer but cannot authorize or execute it. The trusted contact can advise but cannot release or cancel. The operator console uses a separate `MAYA_OPERATOR_KEY` (32+ random characters) and can approve or reject only the current reviewed revision; approval does not bypass the hold timer. This is a shared demo credential, not individual identity or production authentication.
+Open `/app/`, `/demo/`, `/recipient/`, `/contact/` and `/operator/`. Judge and recipient views use scoped pairing codes; contact pairing additionally requires explicit consent. Codes expire in five minutes; access expires after 30 minutes and is revocable. The judge can submit a new sandbox scenario to the customer but cannot authorize or execute it. The trusted contact can advise but cannot release or cancel. The operator console uses a separate `MAYA_OPERATOR_KEY` (32+ random characters) and can approve or reject only the current reviewed revision; approval does not bypass the hold timer. Holds run on each sandbox world's simulated clock: the customer can move only their own world's clock forward (`POST /v1/sandbox/worlds/{id}/clock`, labelled practice time). The payment then needs a fresh review, explicit confirmation and, over INR 1 lakh, approval of that fresh review. This is a shared demo credential, not individual identity or production authentication.
 
 Sandbox worlds/events are purged after `MAYA_WORLD_RETENTION_DAYS` (default 7); derived companion checks are purged after `MAYA_CHECK_RETENTION_HOURS` (default 24). Cleanup runs at startup and during normal requests. Runtime cleanup does not remove copies in database backups; backup retention must follow the same policy. Raw message text is not an accepted API field and remains in the browser.
 
 The bootstrap preserves earlier root model artifacts under `data/checkpoints/`. Local runtime state is `data/v4/product.sqlite`; the signing/session key is `data/v4/session.key`. Preserve the key with the database. No credentials enter source control.
 
-## What a public HTTPS release still requires
+## Quickest public release: Render
+
+`render.yaml` deploys this repository as one free Render Docker service. See
+[DEPLOY_RENDER.md](DEPLOY_RENDER.md). The rest of this section covers a
+self-managed Docker server.
+
+## What a self-managed public HTTPS release requires
 
 The user chose the product name **mayaupi**, but has no Docker server or cloud account connected. A public hostname, hosting account, server access and any required spending authorization remain external prerequisites. No server, paid subscription or domain has been purchased. A bare product name is not a registered domain.
 

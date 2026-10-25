@@ -76,6 +76,15 @@ class ScenarioInput(Body):
     context: Literal['none', 'refund', 'withdrawal', 'rent', 'merchant_refund'] = 'none'
 
 
+class ClockInput(Body):
+    # Simulated time only. One step is at most a day so a hold's hour is shown, not skipped silently.
+    seconds: int = Field(ge=60, le=86400)
+
+
+class CarryInput(Body):
+    previous: str = Field(min_length=1, max_length=80)
+
+
 class ContactResponseInput(Body):
     payment_id: str = Field(min_length=1, max_length=80)
     response: Literal['support', 'concern']
@@ -110,7 +119,12 @@ def private_review(record):
 
 def create_app(database=None, model=None, secret=None, raise_internal_errors=False):
     production = os.getenv('MAYA_ENV') == 'production'
-    origin = os.getenv('MAYA_PUBLIC_ORIGIN', '').rstrip('/')
+    # Render sets RENDER_EXTERNAL_URL (https://<service>.onrender.com) for web services.
+    origin = (os.getenv('MAYA_PUBLIC_ORIGIN') or os.getenv('RENDER_EXTERNAL_URL', '')).rstrip('/')
+    # Behind exactly one managed proxy (Render), the client is the right-most
+    # X-Forwarded-For entry: the one that proxy appended. Entries to its left
+    # come from the client and can be forged, so they are never used.
+    forwarded_client = os.getenv('MAYA_TRUST_FORWARDED_FOR') == '1'
     if production and (not origin.startswith('https://') or len(os.getenv('MAYA_SESSION_SECRET', '')) < 32):
         raise RuntimeError('Production requires HTTPS MAYA_PUBLIC_ORIGIN and a 32+ character MAYA_SESSION_SECRET')
     directory = ROOT / 'data/v4'
@@ -264,6 +278,8 @@ def create_app(database=None, model=None, secret=None, raise_internal_errors=Fal
             request._receive = receive_body
         if request.url.path.startswith('/v1/'):
             identity = request.client.host if request.client else 'unknown'
+            if forwarded_client:
+                identity = request.headers.get('x-forwarded-for', identity).split(',')[-1].strip() or identity
             now = time.monotonic()
             with traffic_lock:
                 # IP budget prevents cookie rotation from bypassing the limiter.
@@ -381,7 +397,9 @@ def create_app(database=None, model=None, secret=None, raise_internal_errors=Fal
 
     @app.post('/v1/sandbox/worlds', status_code=201)
     def create_world(body: WorldInput, request: Request, idempotency_key: str = Header(...)):
-        return call_once(request, 'world', idempotency_key, body.model_dump(),
+        # Fingerprint what the client sent, not the server-drawn default seed, so a
+        # retried empty body replays the first world instead of conflicting.
+        return call_once(request, 'world', idempotency_key, body.model_dump(exclude_unset=True),
                          lambda: service.create_world(owner(request), body.seed, body.preset))
 
     @app.get('/v1/sandbox/worlds/{wid}')
@@ -414,6 +432,17 @@ def create_app(database=None, model=None, secret=None, raise_internal_errors=Fal
     def execute(wid: str, pid: str, body: SendInput, request: Request):
         return service.execute(wid, owner(request), pid, body.review_id, body.confirmed, body.authorization)
 
+    @app.post('/v1/sandbox/worlds/{wid}/clock')
+    def advance_clock(wid: str, body: ClockInput, request: Request):
+        """Move this sandbox world's simulated clock forward (owner only).
+
+        Holds end on simulated time, so a one-hour hold can be shown in a demo.
+        It changes no hold rule: a held payment still needs a fresh review after
+        the hold, explicit confirmation and, over INR 1 lakh, analyst approval.
+        """
+        state = service.control(wid, owner(request), 'advance', seconds=body.seconds)
+        return dict(now=state['now'], advanced_seconds=body.seconds, simulated=True)
+
     @app.post('/v1/sandbox/worlds/{wid}/intents/{pid}/cancel')
     def cancel(wid: str, pid: str, request: Request):
         return service.cancel(wid, owner(request), pid)
@@ -438,13 +467,32 @@ def create_app(database=None, model=None, secret=None, raise_internal_errors=Fal
             row = service.db.execute('SELECT * FROM product_pair WHERE code=?', (digest(body.code.strip().lower()),)).fetchone()
             if not row or row['claimed'] or row['expires'] <= time.time():
                 raise HTTPException(403, 'Pairing code invalid or expired')
-            service.db.execute('UPDATE product_pair SET claimed=1 WHERE code=?', (row['code'],))
+            # Conditional claim: two instances reading the same unclaimed row
+            # cannot both consume it, because only one UPDATE matches claimed=0.
+            claimed = service.db.execute('UPDATE product_pair SET claimed=1 WHERE code=? AND claimed=0',
+                                         (row['code'],))
+            if claimed.rowcount != 1:
+                raise HTTPException(403, 'Pairing code invalid or expired')
             token = secrets.token_urlsafe(32)
             service.db.execute('INSERT INTO product_grant VALUES(?,?,?,?,?,0)',
                                (digest(token), row['world'], row['role'], row['account'], time.time()+1800))
         response = JSONResponse(dict(role=row['role'], expires_in=1800))
         response.set_cookie('maya_observer_v4', token, httponly=True, samesite='strict', secure=production, max_age=1800)
         return response
+
+    @app.post('/v1/sandbox/worlds/{wid}/observers/carry')
+    def carry_observers(wid: str, body: CarryInput, request: Request):
+        """Keep the paired judge and recipient screens when this customer starts a
+        new practice world. Both worlds must belong to this session. Trusted-contact
+        grants are not carried: their consent is given per world."""
+        with service.transaction():
+            service._world(wid, owner(request))
+            service._world(body.previous, owner(request))
+            moved = service.db.execute(
+                "UPDATE product_grant SET world=? WHERE world=? AND role IN ('judge','recipient') "
+                "AND revoked=0 AND expires>?", (wid, body.previous, time.time())).rowcount
+            service._event(wid, 'observers_carried', moved=moved)
+        return dict(moved=moved)
 
     @app.post('/v1/sandbox/worlds/{wid}/revoke')
     def revoke(wid: str, request: Request):
@@ -565,8 +613,13 @@ def create_app(database=None, model=None, secret=None, raise_internal_errors=Fal
                     if await request.is_disconnected():
                         return
                     try:
-                        read_grant(request)
+                        current, _ = read_grant(request)
                     except HTTPException:
+                        return
+                    if current['world'] != grant['world']:
+                        # The customer moved this screen to a new practice world;
+                        # tell the page to reload, then end so it reconnects there.
+                        yield f"data: {canonical(dict(stage='world_changed'))}\n\n"
                         return
                     # No per-subscriber queue. Read committed events with bounded pages.
                     batch = await asyncio.to_thread(service.events, grant['world'], actual_owner, cursor)

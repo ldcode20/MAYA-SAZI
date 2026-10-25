@@ -24,7 +24,7 @@ async function load() {
     const [queue, audit] = await Promise.all([request("/v1/operator/queue"), request("/v1/operator/audit")]);
     $("#message").hidden = true;
     $("#cases").innerHTML = queue.cases.length ? queue.cases.map((c, index) =>
-      `<article class="card"><span class="pill hold">HOLD · REVISION ${c.revision}</span><h2>${esc(money(c.amount_paise))}</h2><p>Recipient #${esc(c.recipient)} · payment ${esc(c.payment_id.slice(0, 8))}</p><ul class="reasons">${c.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul><p class="muted">Model ${esc(c.model_version)} · policy ${esc(c.policy_version)}</p><div class="row"><button data-decision="approve" data-index="${index}">Approve review</button><button class="quiet" data-decision="reject" data-index="${index}">Reject and cancel</button></div></article>`).join("") : "<p>No current analyst holds.</p>";
+      `<article class="card"><span class="pill hold">Held, revision ${c.revision}</span><h2>${esc(money(c.amount_paise))}</h2><p>Recipient ${esc(c.recipient)}, payment ${esc(c.payment_id.slice(0, 8))}</p><ul class="reasons">${c.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul><p class="muted">Model ${esc(c.model_version.slice(0, 12))}, policy ${esc(c.policy_version)}</p><div class="row"><button data-decision="approve" data-index="${index}">Approve review</button><button class="quiet" data-decision="reject" data-index="${index}">Reject and cancel</button></div></article>`).join("") : "<p>No current analyst holds.</p>";
     document.querySelectorAll("[data-decision]").forEach((button) => button.onclick = async () => {
       const c = queue.cases[Number(button.dataset.index)];
       try { await decide(c, button.dataset.decision); await load(); }

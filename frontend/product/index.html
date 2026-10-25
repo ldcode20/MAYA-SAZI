@@ -3,10 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#23264f" />
+    <meta name="theme-color" content="#17302b" />
+    <link rel="icon" href="/product-static/icon.svg" type="image/svg+xml" />
     <title>MAYA · Payment safety</title>
     <link rel="manifest" href="/product-static/manifest.webmanifest" />
     <link rel="stylesheet" href="/product-static/product.css" />
+    <script src="/static/qrcode.js"></script>
     <script type="module" src="/product-static/customer.js"></script>
   </head>
   <body>
@@ -30,10 +32,13 @@
     <p id="announcement" class="sr-only" aria-live="polite"></p>
     <dialog id="pair-dialog">
       <h2 id="pair-title">Connect a device</h2>
+      <div id="pair-qr" class="pair-qr" aria-hidden="true"></div>
       <p id="pair-code" class="pair-code"></p>
-      <p id="pair-help"></p>
-      <button id="copy-code">Copy code</button
-      ><button id="close-dialog" class="quiet">Close</button>
+      <p id="pair-help" class="muted"></p>
+      <div class="row">
+        <button id="copy-code">Copy code</button
+        ><button id="close-dialog" class="quiet">Close</button>
+      </div>
     </dialog>
   </body>
 </html>

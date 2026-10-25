@@ -6,8 +6,9 @@ One architecture should appear in the pitch, README and `/demo/`: see [MAYA_PILO
 
 1. From the repo root, install `requirements-dev.txt`, build the V4 bundle using `scripts/bootstrap_v4.py` and `scripts/train_wallet_bundle.py`, then start `run_demo.py`.
 2. Open `/app/` on the customer device, `/demo/` on the judge display and `/recipient/` on a separate recipient device. Pair each with its own code. For the contact path, first enable consent in the customer app, then pair `/contact/`.
-3. If analyst review is part of the demonstration, provision a random 32+ character `MAYA_OPERATOR_KEY` in the local environment and open `/operator/`. Never show the key. Keep the local-only deployment and a second browser ready; public hosting is not connected.
-4. Have [RUBRIC_DELIVERY.md](RUBRIC_DELIVERY.md) and the frozen PaySim/load evidence open for questions.
+3. If analyst review is part of the demonstration, provision a random 32+ character `MAYA_OPERATOR_KEY` and open `/operator/`. On Render it is generated; copy it from the service's Environment page. Never show the key. On the public Render site (docs/DEPLOY_RENDER.md), judges pair by scanning the QR on the customer's payment screen with their own phones. Keep a local run and a second browser ready as backup.
+4. To show a hold ending within the time slot, use **Skip ahead 1 hour of practice time** on the held payment. Say clearly that this is the practice world's clock; a real hold lasts a real hour.
+5. Have [RUBRIC_DELIVERY.md](RUBRIC_DELIVERY.md) and the frozen PaySim/load evidence open for questions.
 
 ## Timing and story
 
