@@ -290,3 +290,143 @@ def test_retention_ttl_removes_abandoned_worlds_and_derived_checks(monkeypatch,c
     assert customer.get('/v1/health').status_code==200
     assert product.state.service.db.execute('SELECT count(*) FROM sim_world WHERE id=?',(w['id'],)).fetchone()[0]==0
     assert product.state.service.db.execute('SELECT count(*) FROM product_check WHERE id=?',(check['id'],)).fetchone()[0]==0
+
+
+SEND = dict(confirmed=True, authorization='DEMO')
+
+
+def test_empty_world_request_retry_replays_the_same_world(customer, product):
+    # The server draws the seed; a retried empty body must not look like new input.
+    first = post(customer, '/v1/sandbox/worlds', {}, key='retry-me')
+    again = post(customer, '/v1/sandbox/worlds', {}, key='retry-me')
+    assert first.status_code == again.status_code == 201
+    assert first.json()['id'] == again.json()['id']
+    assert product.state.service.db.execute('SELECT count(*) FROM sim_world').fetchone()[0] == 1
+
+
+def test_pairing_code_is_consumed_once_when_another_instance_claims_it_first(customer, product):
+    w = world(customer); root = f'/v1/sandbox/worlds/{w["id"]}'
+    grant = post(customer, root + '/pair', {'role': 'judge', 'account': 1}).json()
+    service = product.state.service
+    real = service.db
+
+    class Rows:
+        def __init__(self, row): self.row = row
+        def fetchone(self): return self.row
+
+    class OtherInstanceWinsTheRace:
+        """Lets a second instance claim the code between our SELECT and UPDATE."""
+        def __getattr__(self, name): return getattr(real, name)
+        def execute(self, query, params=()):
+            cursor = real.execute(query, params)
+            if query.startswith('SELECT * FROM product_pair'):
+                row = cursor.fetchone()
+                real.execute('UPDATE product_pair SET claimed=1 WHERE code=?', params)
+                return Rows(row)
+            return cursor
+
+    service.db = OtherInstanceWinsTheRace()
+    try:
+        with TestClient(product) as judge:
+            assert post(judge, '/v1/observe/pair', {'code': grant['code']}).status_code == 403
+    finally:
+        service.db = real
+    assert real.execute('SELECT count(*) FROM product_grant WHERE world=?', (w['id'],)).fetchone()[0] == 0
+
+
+def test_hold_ends_on_the_simulated_clock_and_still_needs_a_fresh_review(customer):
+    w = world(customer, 'probes'); root = f'/v1/sandbox/worlds/{w["id"]}'
+    p, r = payment(customer, w['id'], 4, 3_000_000)
+    assert r['decision']['action'] == 'hold' and not r['decision']['requires_analyst']
+    execute = root + f'/intents/{p["id"]}/execute'
+    assert post(customer, execute, dict(review_id=r['id'], **SEND)).status_code == 409
+    assert post(customer, root + '/clock', {'seconds': 30}).status_code == 422
+    assert post(customer, root + '/clock', {'seconds': 86401}).status_code == 422
+    moved = post(customer, root + '/clock', {'seconds': 3600})
+    assert moved.status_code == 200 and moved.json()['simulated'] is True
+    # The old review no longer matches the world; a fresh one is required.
+    assert post(customer, execute, dict(review_id=r['id'], **SEND)).status_code == 409
+    fresh = post(customer, root + f'/intents/{p["id"]}/review').json()
+    unconfirmed = post(customer, execute, dict(review_id=fresh['id'], confirmed=False, authorization='DEMO'))
+    assert unconfirmed.status_code == 409
+    sent = post(customer, execute, dict(review_id=fresh['id'], **SEND))
+    assert sent.status_code == 200, sent.text
+    assert customer.get(root).json()['transfers'][0]['id'] == sent.json()['id']
+
+
+def test_analyst_hold_needs_the_operator_after_the_simulated_hour(monkeypatch, customer):
+    key = 'independent-operator-secret-value-at-least-32-chars'
+    monkeypatch.setenv('MAYA_OPERATOR_KEY', key)
+    w = world(customer, 'probes'); root = f'/v1/sandbox/worlds/{w["id"]}'
+    p, r = payment(customer, w['id'], 4, 20_000_000)
+    assert r['decision']['requires_analyst']
+    assert post(customer, root + '/clock', {'seconds': 3600}).status_code == 200
+    fresh = post(customer, root + f'/intents/{p["id"]}/review').json()
+    execute = root + f'/intents/{p["id"]}/execute'
+    assert 'analyst' in post(customer, execute, dict(review_id=fresh['id'], **SEND)).json()['detail']
+    headers = {'X-Operator-Key': key}
+    case = next(c for c in customer.get('/v1/operator/queue', headers=headers).json()['cases']
+                if c['payment_id'] == p['id'])
+    assert case['review_id'] == fresh['id']
+    approve = dict(payment_id=p['id'], review_id=fresh['id'], revision=case['revision'], decision='approve')
+    assert customer.post('/v1/operator/decision', json=approve, headers=headers).status_code == 200
+    assert post(customer, execute, dict(review_id=fresh['id'], **SEND)).status_code == 200
+
+
+def test_only_the_world_owner_can_move_its_clock(customer, product):
+    w = world(customer); root = f'/v1/sandbox/worlds/{w["id"]}'
+    with TestClient(product) as stranger:
+        assert post(stranger, root + '/clock', {'seconds': 3600}).status_code == 409
+    assert customer.get(root).json()['now'] == w['now']
+
+
+def test_forwarded_client_uses_only_the_proxy_appended_address(monkeypatch, tmp_path):
+    monkeypatch.setenv('MAYA_TRUST_FORWARDED_FOR', '1')
+    monkeypatch.setenv('MAYA_REQUESTS_PER_MINUTE', '2')
+    app = create_app(str(tmp_path / 'proxy.sqlite'), FixtureModel(), secret='test-secret' * 5)
+    try:
+        with TestClient(app) as c:
+            spoofed = lambda left: {'X-Forwarded-For': f'{left}, 203.0.113.7'}
+            assert c.get('/v1/health', headers=spoofed('1.1.1.1')).status_code == 200
+            assert c.get('/v1/health', headers=spoofed('2.2.2.2')).status_code == 200
+            # A new forged left-hand entry does not buy a fresh budget.
+            assert c.get('/v1/health', headers=spoofed('3.3.3.3')).status_code == 429
+            assert c.get('/v1/health', headers={'X-Forwarded-For': '198.51.100.9'}).status_code == 200
+    finally:
+        app.state.service.db.close()
+
+
+def test_render_external_url_is_the_default_public_origin(monkeypatch, tmp_path):
+    monkeypatch.delenv('MAYA_PUBLIC_ORIGIN', raising=False)
+    monkeypatch.setenv('RENDER_EXTERNAL_URL', 'https://maya-sazi.onrender.com')
+    app = create_app(str(tmp_path / 'origin.sqlite'), FixtureModel(), secret='test-secret' * 5)
+    try:
+        with TestClient(app) as c:
+            ok = c.post('/v1/sandbox/worlds', json={},
+                        headers={'Origin': 'https://maya-sazi.onrender.com', 'Idempotency-Key': 'a'})
+            assert ok.status_code == 201
+            internal = c.post('/v1/sandbox/worlds', json={},
+                              headers={'Origin': 'http://testserver', 'Idempotency-Key': 'b'})
+            assert internal.status_code == 403
+    finally:
+        app.state.service.db.close()
+
+
+def test_paired_screens_follow_the_customer_to_a_new_practice_world(customer, product):
+    first = world(customer); old = f'/v1/sandbox/worlds/{first["id"]}'
+    judge_code = post(customer, old + '/pair', {'role': 'judge', 'account': 1}).json()['code']
+    post(customer, old + '/contact-consent', {'enabled': True})
+    contact_code = post(customer, old + '/pair', {'role': 'contact', 'account': 1}).json()['code']
+    with TestClient(product) as judge, TestClient(product) as contact:
+        assert post(judge, '/v1/observe/pair', {'code': judge_code}).status_code == 200
+        assert post(contact, '/v1/observe/pair', {'code': contact_code}).status_code == 200
+        second = world(customer, 'probes'); new = f'/v1/sandbox/worlds/{second["id"]}'
+        p, r = payment(customer, second['id'], 4, 3_000_000)
+        with TestClient(product) as stranger:
+            # Someone else's session cannot pull these screens into its world.
+            assert post(stranger, new + '/observers/carry', {'previous': first['id']}).status_code == 409
+        moved = post(customer, new + '/observers/carry', {'previous': first['id']})
+        assert moved.status_code == 200 and moved.json()['moved'] == 1
+        assert judge.get('/v1/observe').json()['reviews'][0]['id'] == r['id']
+        # Contact consent belongs to the old world, so that grant stays there.
+        assert contact.get('/v1/observe').json()['alerts'] == []
