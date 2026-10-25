@@ -1,15 +1,4 @@
----
-title: MAYA
-emoji: 🛡️
-colorFrom: indigo
-colorTo: purple
-sdk: docker
-app_port: 7860
-pinned: false
-short_description: Explainable UPI scam prevention — interactive synthetic demo
----
-
-# MAYA 🛡️
+# MAYA
 ### Explainable AI for safer digital payments
 
 **MAYA helps people recognize suspicious UPI payment journeys before they trust a transaction.** It brings together transaction patterns, recipient-network signals and contextual warning signs, then explains whether a payment should proceed, prompt a warning or receive further review.
@@ -62,7 +51,21 @@ MAYA is designed around three principles:
 - **Require corroboration before a hold:** do not freeze a payment solely because of an alarming message, a phone signal or a model prediction.
 - **Make decisions understandable:** show the user what raised concern and distinguish a warning from a stronger intervention.
 
-The project also draws on **qualitative field visits with approximately ten small merchants and vendors around NIT Warangal**. Discussions highlighted payment confirmation, connectivity, false payment claims, reliance on soundboxes and phishing-message concerns. These observations informed the emphasis on clear payment status and understandable warnings; they are not a population-wide survey.
+## Background & Field Research
+
+MAYA's merchant-safety priorities were informed by visits to around 10 street vendors, fruit sellers and kirana stores around the NIT Warangal campus. These conversations and observations grounded the project in the conditions small merchants face while accepting UPI payments.
+
+Recurring concerns included dependence on soundboxes for payment confirmation, connectivity interruptions, fake payment claims and phishing SMS reaching vendors' phones. Together, these findings point to a practical need: make payment status clear and help merchants recognize suspicious claims and messages without adding friction to everyday transactions.
+
+![Field visit at a neighborhood kirana store near NIT Warangal](https://raw.githubusercontent.com/ldcode20/MAYA-SAZI/main/docs/field-research/vendor-kirana-visit.png)
+
+*Field visit at a neighborhood kirana store near NIT Warangal.*
+
+![Field visit at a streetside vendor stall near NIT Warangal](https://raw.githubusercontent.com/ldcode20/MAYA-SAZI/main/docs/field-research/street-vendor-visit.png)
+
+*Field visit at a streetside vendor stall near NIT Warangal.*
+
+These are qualitative field observations from a small group of merchants, rather than a representative survey. They help explain why MAYA emphasizes clear status, readable warnings and a low-friction payment experience.
 
 ## How the detection works
 
