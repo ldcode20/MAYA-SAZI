@@ -13,14 +13,19 @@ Streamlit and `src/api.py` entrypoints below remain research examples.
 .\.venv\Scripts\python.exe run_demo.py
 ```
 
-Open `http://127.0.0.1:8000/app/`. Pair `/demo/` and `/recipient/` in separate
-browsers using the codes from the customer payment screen. Dummy payment success
-comes from committed ledger state. No real money, bank credentials or government
-report submission are involved.
+Open `http://127.0.0.1:8000/app/` and pick a practice situation. Pair `/demo/`
+and `/recipient/` on other devices by scanning the QR on the customer's payment
+screen, or by typing its code. Dummy payment success comes from committed ledger
+state. A hold ends on the practice world's simulated clock ("Skip ahead 1 hour
+of practice time"), then needs a fresh check. No real money, bank credentials or
+government report submission are involved.
 
-See [Docker/HTTPS deployment](docs/DEPLOY_V4.md), [release status and limits](docs/V4_RELEASE_STATUS.md)
-and [frozen evidence](docs/evidence). A public deployment requires a hosting
-account/server and hostname. No bank-ready or national-throughput claim is made.
+**Its own website.** `render.yaml` deploys this repository to Render's free tier
+as one Docker service with its own `https://…onrender.com` address, so judges use
+their own phones on any network. See [Render deployment](docs/DEPLOY_RENDER.md).
+For a self-managed server, see [Docker/HTTPS deployment](docs/DEPLOY_V4.md). Also
+see [release status and limits](docs/V4_RELEASE_STATUS.md) and
+[frozen evidence](docs/evidence). No bank-ready or national-throughput claim is made.
 
 For the audit response, see the [rubric delivery matrix](docs/RUBRIC_DELIVERY.md),
 [shadow-pilot blueprint](docs/MAYA_PILOT_BLUEPRINT.md), [six-minute judge runbook](docs/JUDGE_RUNBOOK.md)
@@ -31,7 +36,9 @@ The age fairness slice is flagged for review, and all generated metrics remain
 simulator evidence rather than real-UPI performance claims.
 
 The public companion sends derived intent only; raw message parsing stays in the
-browser. It abstains from behavioral scoring without bank history. The sandbox,
+browser, using a small English/Hindi rule set (withdrawal fees, "enter your PIN
+to receive" refunds). Anything else stays "unknown". It abstains from behavioral
+scoring without bank history. The sandbox,
 public PaySim benchmark and partner-model contracts are separate sources.
 
 ## Background & Field Research
