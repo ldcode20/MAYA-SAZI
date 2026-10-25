@@ -1,0 +1,101 @@
+{
+  "schema": "maya-seed-sweep-v1",
+  "configuration": {
+    "users": 5000,
+    "days": 60,
+    "seeds": [
+      42,
+      2026,
+      2027
+    ],
+    "generator_source_sha256": "992ed5a2f9adac21ce62c0d501fa8577ddcd82da0b756996973ceed7bc92f636",
+    "feature_source_sha256": "36af6f4bf25ba605d251ff87bd3e850f080203a59a355779e748bc5f8d9522de"
+  },
+  "seeds": [
+    {
+      "seed": 42,
+      "users": 5000,
+      "days": 60,
+      "train_rows": 206085,
+      "validation_rows": 46591,
+      "test_rows": 88585,
+      "test_auprc": 0.7359706426954373,
+      "test_auroc": 0.9626145298599507,
+      "recall_at_1pct_fpr": 0.8366013071895425,
+      "fpr_at_validation_threshold": 0.005032115071467342,
+      "test_positive_count": 153,
+      "file_hashes": {
+        "transactions_sha256": "3f84e7c168e5e10ce5052f17bcb08ca60927dafa995664ed64d77a707bdca151",
+        "features_sha256": "186793102ea220fdc92dd5a91681a7d912bdeaf90de3c0c56ff25bd0bf1e3f7f",
+        "model_sha256": "6f33f8d07d22c4741e25fe5c0cdc6b04d7ba18a3a42a4fc8e0c764fa8f0b3e57"
+      },
+      "split_policy": "contiguous later-day test block; threshold chosen on validation"
+    },
+    {
+      "seed": 2026,
+      "users": 5000,
+      "days": 60,
+      "train_rows": 206272,
+      "validation_rows": 46610,
+      "test_rows": 88344,
+      "test_auprc": 0.8755789810679686,
+      "test_auroc": 0.9924726005064828,
+      "recall_at_1pct_fpr": 0.8839779005524862,
+      "fpr_at_validation_threshold": 0.002381951612354389,
+      "test_positive_count": 181,
+      "file_hashes": {
+        "transactions_sha256": "e87fa1eac002a3e001fcad86f9ce81d16974eae6a8a0a8b05080dd29210c549a",
+        "features_sha256": "3ffcdbc4444c6843868ab77da711bdf9ea871cafb41db6fd141c3c552df2ca4d",
+        "model_sha256": "86c6889bd53a74e9cbe58e477df2eb57ef3bffd363062cf9c4b8ff4e0f91ad24"
+      },
+      "split_policy": "contiguous later-day test block; threshold chosen on validation"
+    },
+    {
+      "seed": 2027,
+      "users": 5000,
+      "days": 60,
+      "train_rows": 205551,
+      "validation_rows": 46959,
+      "test_rows": 88305,
+      "test_auprc": 0.7820831447874101,
+      "test_auroc": 0.9897395834406922,
+      "recall_at_1pct_fpr": 0.8080808080808081,
+      "fpr_at_validation_threshold": 0.007811260004988323,
+      "test_positive_count": 99,
+      "file_hashes": {
+        "transactions_sha256": "95d2fa51129573fc85b4624e3db7cbaf08c02b1545d5e0383a1df93ae2ff9066",
+        "features_sha256": "8e5e0966e54fd70b010661015175f5ac433dd13f5eb40525d0bfe55b90c9e63e",
+        "model_sha256": "d4a8201886a1c7e7ce24d4c665026a08a32b4a2930f2c0ff3925038dffd58eba"
+      },
+      "split_policy": "contiguous later-day test block; threshold chosen on validation"
+    }
+  ],
+  "ranges": {
+    "test_auprc": {
+      "min": 0.7359706426954373,
+      "max": 0.8755789810679686,
+      "mean": 0.7978775895169387
+    },
+    "test_auroc": {
+      "min": 0.9626145298599507,
+      "max": 0.9924726005064828,
+      "mean": 0.9816089046023753
+    },
+    "recall_at_1pct_fpr": {
+      "min": 0.8080808080808081,
+      "max": 0.8839779005524862,
+      "mean": 0.8428866719409456
+    },
+    "fpr_at_validation_threshold": {
+      "min": 0.002381951612354389,
+      "max": 0.007811260004988323,
+      "mean": 0.005075108896270018
+    }
+  },
+  "interpretation": "Different synthetic-world seeds from the same generator family; not a real-UPI estimate or independent population sample.",
+  "limitations": [
+    "Same simulator family and labeling rules across seeds.",
+    "Every model is tested only on its later-day block.",
+    "No confidence interval across these few generator seeds."
+  ]
+}

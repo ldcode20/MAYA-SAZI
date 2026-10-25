@@ -293,6 +293,9 @@ def _self_test_cases() -> list:
         ("unsure hold analyst only if >100k", unsure, both_feats, soft_off, 99_999.0, "hold", 60, False, None),
         # MuleHunter.AI as a Receiving Account hard signal (unsure set only)
         ("unsure mule alone -> nudge", unsure, none_feats, soft_off, 900.0, "nudge", 0, False, "mule"),
+        # A report and MuleHunter verdict concern the same receiving-account
+        # group; they must not be double-counted as independent evidence.
+        ("unsure reported payee + mule -> nudge", unsure, rcv_feats, soft_off, 900.0, "nudge", 0, False, "mule"),
         ("unsure mule + pay -> hold", unsure, pay_feats, soft_off, 900.0, "hold", 60, False, "mule"),
         ("unsure mule + soft -> hold", unsure, none_feats, chat, 900.0, "hold", 60, False, "mule"),
         ("unsure suspicious -> nudge", unsure, none_feats, soft_off, 900.0, "nudge", 0, False, "suspicious"),

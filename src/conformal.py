@@ -26,6 +26,7 @@ import math
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import xgboost as xgb
 
 from risk_common import (
@@ -98,6 +99,13 @@ def run(args) -> None:
     model = xgb.XGBClassifier()
     model.load_model(args.model)
     df = load_features(args.features)
+    if args.exclude_scam_type:
+        if not args.transactions:
+            raise ValueError('--exclude-scam-type requires --transactions for row-level labels')
+        labels = pd.read_csv(args.transactions, usecols=['txn_id', 'scam_type'])
+        df = df.merge(labels, on='txn_id', how='left', validate='one_to_one')
+        excluded = (df[TARGET] == 1) & (df['scam_type'].astype(str) == args.exclude_scam_type)
+        df = df.loc[~excluded].copy()
 
     ca = df[df["split"] == "calib"]
     te = df[df["split"] == "test"]
@@ -120,6 +128,7 @@ def run(args) -> None:
         "qhat_scam": qhat_scam,
         "scam_threshold": 1.0 - qhat_scam,
         "calibration_split": "calib",
+        "excluded_scam_type": args.exclude_scam_type,
         "calibration_rows": int(len(ca)),
         "calibration_pos": int(y_ca.sum()),
         "test": rep,
@@ -158,6 +167,9 @@ def main(argv=None) -> None:
     ap.add_argument("--alpha-scam", type=float, default=0.10,
                     help="max miss rate for scams (1 - scam coverage)")
     ap.add_argument("--txn-id", type=int, default=None)
+    ap.add_argument("--exclude-scam-type", choices=('investment', 'digital_arrest', 'sextortion'),
+                    help="remove this positive type from calibration data")
+    ap.add_argument("--transactions", default=None, help="transactions CSV required for leave-one-type-out calibration")
     ap.add_argument("--smoke", action="store_true",
                     help="calibrate the train_xgb --smoke model on data/smoke/features.csv")
     args = ap.parse_args(argv)

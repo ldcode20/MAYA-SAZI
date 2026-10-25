@@ -154,3 +154,30 @@
   so the site deploys to Render's free tier instead: `serve.py` binds `$PORT`,
   `render.yaml` Blueprint, and `build_space.py --github` force-pushes the bundle
   to a private deploy repo (`ldcode20/maya-site`). Measured ~320 MB RSS.
+
+### Rubric evidence and cold-start safeguard — 25 October 2026
+- Completed the evidence pass: froze three-seed, held-out-type, fairness,
+  lookalike, fast-path, cold-start, kit and browser reports with source/model
+  hashes and explicit synthetic-data limits. Updated rubric delivery, judge
+  runbook and release status documents to match the measured results.
+- Corrected the event generator so wedding/festival controls can occur after
+  the training period; added a regression guard for later-day coverage.
+- Added a cold-start behavior probe through the actual wallet model, online
+  feature path and policy. It verifies zero eligible endpoint history in 64
+  generated worlds. Since `n_t` measures recent first-seen counterparties,
+  the safeguard uses eligible outgoing event lineage instead of treating
+  `n_t_snd == 0` as no account history.
+- MAYA now gives a plain-language non-blocking nudge when no successful
+  outgoing payment is available for comparison. It cannot create a hold, and
+  the two-independent-group hold verifier is unchanged. A regression test
+  covers both genuinely empty history and the recent-counterparty zero case.
+- The refreshed authored kit remains 20/24: both spaced-probe and both
+  slow-drip cases are released. Three synthetic seeds have mean PR-AUC 0.798
+  (range 0.736–0.876); the age cohort crosses the descriptive review gate at
+  3.03 percentage points. Incoming refund-credit lookalikes are explicitly
+  labelled as out-of-scope counterfactual stress checks.
+- Verification: 152 passed, 12 environment-gated skips and 24 subtests;
+  policy self-test 23/23; Python compile and JavaScript syntax checks passed;
+  Playwright three-context check passed (ledger receipt, judge observation,
+  raw-text canary, revocation and 390px overflow). The browser emitted expected
+  403 responses after access revocation and no page errors.

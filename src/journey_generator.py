@@ -27,10 +27,11 @@ SMOKE_DIR = "data/smoke"  # --smoke output; features.py --smoke reads it
 
 CATEGORIES = [
     "salary", "rent", "wedding", "p2p", "merchant",
-    "investment", "digital_arrest", "sextortion", "layering",
+    "investment", "digital_arrest", "sextortion", "layering", "refund",
 ]
 CAT_SALARY, CAT_RENT, CAT_WEDDING, CAT_P2P, CAT_MERCHANT = 0, 1, 2, 3, 4
 CAT_INVEST, CAT_ARREST, CAT_SEXTO, CAT_LAYER = 5, 6, 7, 8
+CAT_REFUND = 9
 
 SCAM_TYPES = ["investment", "digital_arrest", "sextortion"]
 SCAM_CAT = {"investment": CAT_INVEST, "digital_arrest": CAT_ARREST, "sextortion": CAT_SEXTO}
@@ -231,6 +232,10 @@ class Users:
     friends: np.ndarray
     employer: np.ndarray
     landlord: np.ndarray
+    age_band: np.ndarray
+    language: np.ndarray
+    phone_type: np.ndarray
+    join_day: np.ndarray
 
 
 def generate_users(cfg: Config, acc: Accounts, rng: np.random.Generator) -> Users:
@@ -247,8 +252,18 @@ def generate_users(cfg: Config, acc: Accounts, rng: np.random.Generator) -> User
     friends = rng.integers(0, n, size=(n, cfg.friend_k)).astype(np.int64)
     self_mask = friends == np.arange(n)[:, None]
     friends[self_mask] = (friends[self_mask] + 1) % n
+    # Synthetic cohort tags are for slice reporting only. They are deliberately
+    # not part of the 27-column model contract and do not represent real people.
+    age_band = rng.choice(["18-24", "25-44", "45-59", "60+"], size=n,
+                          p=[0.24, 0.48, 0.19, 0.09])
+    language = rng.choice(["te", "hi", "en", "other"], size=n,
+                          p=[0.42, 0.28, 0.20, 0.10])
+    phone_type = rng.choice(["android_entry", "android_mid", "android_premium", "ios"], size=n,
+                            p=[0.36, 0.38, 0.18, 0.08])
     return Users(income=income, rent=rent, salary_day=salary_day, rent_day=rent_day,
-                 friends=friends, employer=employer, landlord=landlord)
+                 friends=friends, employer=employer, landlord=landlord,
+                 age_band=age_band, language=language, phone_type=phone_type,
+                 join_day=acc.join_day[:n].copy())
 
 
 class Ledger:
@@ -317,6 +332,16 @@ def add_normal(cfg: Config, acc: Accounts, us: Users, rng: np.random.Generator, 
         led.add(sender=send, receiver=recv, day=day, tsec=day * 86400 + sec, amount=amount,
                 cat=np.full(mtot, CAT_MERCHANT), ttype=np.ones(mtot, np.int64),
                 app=rng.integers(0, len(APPS), mtot), status=rng.choice([0, 1, 2], size=mtot, p=[0.96, 0.03, 0.01]))
+        # Genuine delayed credits act as honest lookalikes, not fraud labels.
+        # They are a small synthetic slice, not a claim about refund prevalence.
+        for ix in np.flatnonzero(rng.random(mtot) < 0.012):
+            if int(day[ix]) >= D - 1:
+                continue
+            refund_day = min(D - 1, int(day[ix]) + int(rng.integers(1, 8)))
+            refund_at = refund_day * 86400 + int(rng.integers(8 * 3600, 22 * 3600))
+            led.add_row(int(recv[ix]), int(send[ix]), refund_day, refund_at,
+                        float(amount[ix] * rng.uniform(0.5, 1.0)), CAT_REFUND, 1,
+                        int(rng.integers(0, len(APPS))), 0)
 
     sal_mask = ((days[None, :] % 30 == us.salary_day[:, None]) & (days[None, :] >= 1) & active)
     ui, di = np.where(sal_mask)
@@ -331,6 +356,8 @@ def add_normal(cfg: Config, acc: Accounts, us: Users, rng: np.random.Generator, 
     ui, di = np.where(rent_mask)
     if ui.size:
         amount = us.rent[ui] * rng.lognormal(0.0, 0.03, size=ui.size)
+        rent_rise = (di >= 60) & (rng.random(ui.size) < 0.08)
+        amount[rent_rise] *= rng.uniform(1.10, 1.25, size=int(rent_rise.sum()))
         sec = rng.integers(6 * 3600, 12 * 3600, size=ui.size)
         led.add(sender=ui, receiver=us.landlord[ui], day=di, tsec=di * 86400 + sec, amount=amount,
                 cat=np.full(ui.size, CAT_RENT), ttype=np.zeros(ui.size, np.int64),
@@ -339,11 +366,11 @@ def add_normal(cfg: Config, acc: Accounts, us: Users, rng: np.random.Generator, 
     wrng = make_rng(cfg.seed, "weddings")
     hosts = np.where((wrng.random(n) < cfg.wedding_event_rate) & (acc.join_day[:n] < D - 2))[0]
     for h in hosts:
-        d0 = int(acc.join_day[h]) + 1
-        d1 = min(D - 1, d0 + 2)
-        if d1 <= d0:
-            continue
-        eday = int(wrng.integers(d0, d1 + 1))
+        # Place the celebration after account creation but across the remaining
+        # timeline. Tying it to the first few days after onboarding left no
+        # wedding controls in the later-day evaluation split.
+        first_active_day = int(acc.join_day[h]) + 1
+        eday = int(wrng.integers(first_active_day, D))
         g = cfg.wedding_gifts
         for _ in range(g):
             friend = int(us.friends[h, wrng.integers(0, cfg.friend_k)])
@@ -572,6 +599,59 @@ def build_transactions(cfg: Config, led: Ledger, acc: Accounts, n_campaigns: int
     return tx
 
 
+def attach_cohort_tags(tx: pd.DataFrame, campaigns: list, us: Users, n_users: int) -> pd.DataFrame:
+    """Attach synthetic audit cohorts without exposing them to model features."""
+    campaign_victim = {c.idx: c.victim for c in campaigns}
+    sender = tx["sender_id"].to_numpy(dtype=np.int64)
+    receiver = tx["receiver_id"].to_numpy(dtype=np.int64)
+    campaign_codes = tx["campaign_id"].cat.codes.to_numpy(dtype=np.int64)
+    cohort_user = np.full(len(tx), -1, dtype=np.int64)
+    for i, campaign in enumerate(campaign_codes):
+        if campaign >= 0:
+            cohort_user[i] = campaign_victim.get(int(campaign), -1)
+        elif 0 <= sender[i] < n_users:
+            cohort_user[i] = sender[i]
+        elif 0 <= receiver[i] < n_users:
+            cohort_user[i] = receiver[i]
+    valid = cohort_user >= 0
+    for name, values in (("cohort_age_band", us.age_band),
+                         ("cohort_language", us.language),
+                         ("cohort_phone_type", us.phone_type)):
+        column = np.full(len(tx), "not_applicable", dtype=object)
+        column[valid] = values[cohort_user[valid]]
+        tx[name] = column
+    tenure = np.full(len(tx), -1, dtype=np.int32)
+    tenure[valid] = np.maximum(0, tx['day'].to_numpy(dtype=np.int32)[valid] - us.join_day[cohort_user[valid]])
+    tx['cohort_tenure_days'] = tenure
+    # These are tagged evaluation strata. They never enter the model feature
+    # matrix and are not labels for fraud.
+    category = tx['category'].astype(str).to_numpy()
+    lookalike = np.full(len(tx), 'ordinary', dtype=object)
+    lookalike[category == 'wedding'] = 'wedding_festival'
+    lookalike[category == 'refund'] = 'genuine_refund_credit'
+    lookalike[category == 'rent'] = 'rent_payment'
+    rent_history = {}
+    for i in np.flatnonzero(category == 'rent'):
+        pair = (int(sender[i]), int(receiver[i]))
+        amounts = rent_history.setdefault(pair, [])
+        if amounts and float(tx.iloc[i]['amount']) > float(np.median(amounts)) * 1.10:
+            lookalike[i] = 'rent_increase'
+        amounts.append(float(tx.iloc[i]['amount']))
+    seen_merchants = set()
+    for i in np.flatnonzero(category == 'merchant'):
+        pair = (int(sender[i]), int(receiver[i]))
+        if pair not in seen_merchants:
+            lookalike[i] = 'first_time_merchant'
+            seen_merchants.add(pair)
+    personal = ((category == 'p2p') & (sender < n_users) & (receiver < n_users)
+                & (tx['is_scam'].to_numpy() == 0))
+    if personal.any():
+        amount_floor = float(tx.loc[personal, 'amount'].quantile(0.95))
+        lookalike[personal & (tx['amount'].to_numpy() >= amount_floor)] = 'large_known_contact_proxy'
+    tx['lookalike_type'] = lookalike
+    return tx
+
+
 def attach_day_split(cfg: Config, tx: pd.DataFrame) -> np.ndarray:
     codes = split_codes(cfg.n_days, cfg.split_fracs)
     return codes[tx["day"].to_numpy()]
@@ -617,6 +697,7 @@ def run(cfg: Config) -> None:
     campaigns = generate_campaigns(cfg, acc, us, net, make_rng(cfg.seed, "campaigns"), led)
 
     tx = build_transactions(cfg, led, acc, len(campaigns))
+    tx = attach_cohort_tags(tx, campaigns, us, cfg.n_users)
     split_codes_arr = attach_day_split(cfg, tx)
     split_names = np.array(SPLITS)[split_codes_arr]
     tx.insert(3, "split", pd.Categorical(split_names, categories=SPLITS))

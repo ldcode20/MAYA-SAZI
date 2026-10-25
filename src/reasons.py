@@ -40,8 +40,6 @@ def top_reasons(shap_row: np.ndarray, k: int = 3) -> list:
 
 
 def native_contrib(model, X) -> np.ndarray:
-    """XGBoost's own SHAP values, over the same trees the model scores with
-    (early stopping keeps best_iteration + 1 of them; TreeExplainer already does)."""
     booster = model.get_booster()
     dm = xgb.DMatrix(X, feature_names=FEATURE_COLUMNS)
     stop = int(getattr(model, "best_iteration", booster.num_boosted_rounds() - 1)) + 1

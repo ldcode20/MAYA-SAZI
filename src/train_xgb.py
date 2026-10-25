@@ -36,6 +36,13 @@ from risk_common import (
 def run(args) -> None:
     t0 = time.time()
     df = load_features(args.features, columns=FEATURE_COLUMNS + (HELPER_COLUMNS if args.augment else []))
+    if args.exclude_scam_type:
+        if not args.transactions:
+            raise ValueError('--exclude-scam-type requires --transactions for row-level labels')
+        labels = pd.read_csv(args.transactions, usecols=['txn_id', 'scam_type'])
+        df = df.merge(labels, on='txn_id', how='left', validate='one_to_one')
+        excluded = (df[TARGET] == 1) & (df['scam_type'].astype(str) == args.exclude_scam_type)
+        df = df.loc[~excluded].copy()
     tr = df[df["split"] == "train"]
     va = df[df["split"] == "val"]
     te = df[df["split"] == "test"]
@@ -83,6 +90,7 @@ def run(args) -> None:
         "adversarial_attacks": list(TRAIN_ATTACKS) if args.augment else [],
         "adversarial_rows": n_aug,
         "val_rows": int(len(va)), "val_pos": int(yva.sum()),
+        "test_rows": int(len(te)), "test_pos": int(yte.sum()),
         "calib_rows_held_out": int((df["split"] == "calib").sum()),
         "val_auroc": float(roc_auc_score(yva, p_va)),
         "val_auprc": float(average_precision_score(yva, p_va)),
@@ -99,6 +107,7 @@ def run(args) -> None:
             "learning_rate": args.lr, "subsample": args.subsample,
             "colsample_bytree": args.colsample, "seed": args.seed,
         },
+        "excluded_scam_type": args.exclude_scam_type,
         "features": FEATURE_COLUMNS,
     }
 
@@ -131,6 +140,9 @@ def main(argv=None) -> None:
     ap.add_argument("--subsample", type=float, default=XGB_DEFAULTS["subsample"])
     ap.add_argument("--colsample", type=float, default=XGB_DEFAULTS["colsample_bytree"])
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--exclude-scam-type", choices=('investment', 'digital_arrest', 'sextortion'),
+                    help="remove this positive type from train, validation and calibration data")
+    ap.add_argument("--transactions", default=None, help="transactions CSV required for leave-one-type-out evaluation")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--no-augment", dest="augment", action="store_false",
                     help="skip adversarial training on evasive copies of train scams")

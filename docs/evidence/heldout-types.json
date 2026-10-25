@@ -1,0 +1,225 @@
+{
+  "schema": "maya-heldout-scam-type-v1",
+  "source_fingerprints": {
+    "features_sha256": "336c08a68cee0f0d84e2bcbd43cfe276b491dda7c9e05ca6f911b2004f568d57",
+    "transactions_sha256": "ddb53fa8f12671a5a2c584e8852a72b0abc45daafe4f95659841d8a98aad337e"
+  },
+  "dataset": {
+    "feature_rows": 767703,
+    "split_rows": {
+      "train": 406483,
+      "val": 87895,
+      "calib": 95182,
+      "test": 178143
+    }
+  },
+  "results": [
+    {
+      "held_out_type": "investment",
+      "training_positive_rows_removed": 230,
+      "train_seed": 42,
+      "test_transactions": 72,
+      "test_campaigns": 7,
+      "model_sha256": "76e0af67531c0c33c22ebd38e68a0da5284e6808a9b8551a70b0b8049b7e6a33",
+      "conformal_sha256": "fc16512c7b580f855fa70051f4ad2e6401bd37475ef9f60fc69b149e581ba94f",
+      "detected_before_release": 0.8472222222222222,
+      "hold_rate": 0.6666666666666666,
+      "nudge_rate": 0.18055555555555555,
+      "released_count": 11,
+      "named_misses": [
+        {
+          "txn_id": 617645,
+          "campaign_id": "C00016",
+          "stage": 1,
+          "action": "release",
+          "p_scam": 0.04783514887094498
+        },
+        {
+          "txn_id": 625892,
+          "campaign_id": "C00036",
+          "stage": 2,
+          "action": "release",
+          "p_scam": 0.030788550153374672
+        },
+        {
+          "txn_id": 632171,
+          "campaign_id": "C00000",
+          "stage": 1,
+          "action": "release",
+          "p_scam": 0.045707616955041885
+        },
+        {
+          "txn_id": 633683,
+          "campaign_id": "C00040",
+          "stage": 1,
+          "action": "release",
+          "p_scam": 0.04773154854774475
+        },
+        {
+          "txn_id": 640839,
+          "campaign_id": "C00071",
+          "stage": 2,
+          "action": "release",
+          "p_scam": 0.021695636212825775
+        },
+        {
+          "txn_id": 642667,
+          "campaign_id": "C00016",
+          "stage": 2,
+          "action": "release",
+          "p_scam": 0.008989132009446621
+        },
+        {
+          "txn_id": 654768,
+          "campaign_id": "C00036",
+          "stage": 2,
+          "action": "release",
+          "p_scam": 0.0014191739028319716
+        },
+        {
+          "txn_id": 655570,
+          "campaign_id": "C00040",
+          "stage": 2,
+          "action": "release",
+          "p_scam": 0.029560668393969536
+        },
+        {
+          "txn_id": 657646,
+          "campaign_id": "C00058",
+          "stage": 2,
+          "action": "release",
+          "p_scam": 0.0438617542386055
+        },
+        {
+          "txn_id": 678604,
+          "campaign_id": "C00040",
+          "stage": 2,
+          "action": "release",
+          "p_scam": 0.008638140745460987
+        },
+        {
+          "txn_id": 679726,
+          "campaign_id": "C00058",
+          "stage": 2,
+          "action": "release",
+          "p_scam": 0.061281658709049225
+        }
+      ],
+      "calibration": {
+        "method": "mondrian-lac",
+        "score": "lac: 1 - p(true class), calibrated per class",
+        "alpha_fine": 0.01,
+        "alpha_scam": 0.1,
+        "qhat_fine": 0.06487984210252762,
+        "qhat_scam": 0.028678536415100098,
+        "scam_threshold": 0.9713214635848999,
+        "calibration_split": "calib",
+        "excluded_scam_type": "investment",
+        "calibration_rows": 95128,
+        "calibration_pos": 11,
+        "test": {
+          "coverage": 0.9999775370498284,
+          "coverage_scam": 1.0,
+          "coverage_fine": 0.9999775331386206,
+          "set_distribution": {
+            "{fine}": 176167,
+            "{scam}": 29,
+            "{fine, scam}": 1875
+          },
+          "unsure_share": 0.010529507892919116,
+          "scam_singleton_recall": 0.8064516129032258,
+          "scam_detection_rate": 1.0,
+          "avg_set_size": 1.010529507892919
+        }
+      }
+    },
+    {
+      "held_out_type": "digital_arrest",
+      "training_positive_rows_removed": 94,
+      "train_seed": 42,
+      "test_transactions": 21,
+      "test_campaigns": 3,
+      "model_sha256": "1c6cb49de769fca5b3fcd12ea05ed5826ceb627e47801c25c00e88e87599f0c4",
+      "conformal_sha256": "75ef9e717f7f9815e32f7f55ffe92e010feddd3a0208e0ddb1eec6eea07e58d7",
+      "detected_before_release": 1.0,
+      "hold_rate": 0.8571428571428571,
+      "nudge_rate": 0.14285714285714285,
+      "released_count": 0,
+      "named_misses": [],
+      "calibration": {
+        "method": "mondrian-lac",
+        "score": "lac: 1 - p(true class), calibrated per class",
+        "alpha_fine": 0.01,
+        "alpha_scam": 0.1,
+        "qhat_fine": 0.31947392225265503,
+        "qhat_scam": 0.06686252355575562,
+        "scam_threshold": 0.9331374764442444,
+        "calibration_split": "calib",
+        "excluded_scam_type": "digital_arrest",
+        "calibration_rows": 95179,
+        "calibration_pos": 62,
+        "test": {
+          "coverage": 0.9995677120176059,
+          "coverage_scam": 0.9878048780487805,
+          "coverage_fine": 0.9995731296337902,
+          "set_distribution": {
+            "{fine}": 176008,
+            "{scam}": 130,
+            "{fine, scam}": 1984
+          },
+          "unsure_share": 0.011138433208699654,
+          "scam_singleton_recall": 0.6585365853658537,
+          "scam_detection_rate": 0.9878048780487805,
+          "avg_set_size": 1.0111384332086997
+        }
+      }
+    },
+    {
+      "held_out_type": "sextortion",
+      "training_positive_rows_removed": 172,
+      "train_seed": 42,
+      "test_transactions": 10,
+      "test_campaigns": 1,
+      "model_sha256": "253ef5ace5a30acec939010b16c05d403c81a8fc236887d89e908ccdc4913652",
+      "conformal_sha256": "f3dbbf2b21d28ae8e2b4faa591c98cf97416c72de99e6c320854622e964c3878",
+      "detected_before_release": 1.0,
+      "hold_rate": 0.9,
+      "nudge_rate": 0.1,
+      "released_count": 0,
+      "named_misses": [],
+      "calibration": {
+        "method": "mondrian-lac",
+        "score": "lac: 1 - p(true class), calibrated per class",
+        "alpha_fine": 0.01,
+        "alpha_scam": 0.1,
+        "qhat_fine": 0.06211397051811218,
+        "qhat_scam": 0.004721283912658691,
+        "scam_threshold": 0.9952787160873413,
+        "calibration_split": "calib",
+        "excluded_scam_type": "sextortion",
+        "calibration_rows": 95174,
+        "calibration_pos": 57,
+        "test": {
+          "coverage": 0.9999775448681603,
+          "coverage_scam": 0.956989247311828,
+          "coverage_fine": 1.0,
+          "set_distribution": {
+            "{fine}": 176596,
+            "{scam}": 64,
+            "{fine, scam}": 1473
+          },
+          "unsure_share": 0.008269102299966878,
+          "scam_singleton_recall": 0.6881720430107527,
+          "scam_detection_rate": 0.956989247311828,
+          "avg_set_size": 1.0082691022999668
+        }
+      }
+    }
+  ],
+  "methodology": "For each run, all rows of the selected scam type are removed from model fitting, validation threshold selection and conformal calibration. Evaluation uses only later-day test transactions of that type.",
+  "limitations": [
+    "Synthetic labels and one generator family.",
+    "The type taxonomy is small and does not cover real scam variation.",
+    "Nudge is counted as an interruption, not as proof that money was saved."
+  ]
+}
