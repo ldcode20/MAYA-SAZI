@@ -1,0 +1,203 @@
+{
+  "schema": "maya-synthetic-fairness-v1",
+  "data_split": "test",
+  "cohort_source": "synthetic generator metadata",
+  "model": "xgb_model.json",
+  "rows": 178143,
+  "scams": 103,
+  "source_fingerprints": {
+    "features_sha256": "336c08a68cee0f0d84e2bcbd43cfe276b491dda7c9e05ca6f911b2004f568d57",
+    "transactions_sha256": "ddb53fa8f12671a5a2c584e8852a72b0abc45daafe4f95659841d8a98aad337e"
+  },
+  "model_sha256": "d3263873885c9e75d08d43321b29bc95297d1327b10d3bacf0c6b2040876951d",
+  "feature_contract_columns": 27,
+  "cohort_columns_excluded_from_features": true,
+  "minimum_scams_per_group": 20,
+  "reports": {
+    "cohort_age_band": {
+      "groups": {
+        "18-24": {
+          "rows": 42588,
+          "scam_count": 27,
+          "scam_misses": 0,
+          "scam_miss_rate": 0.0,
+          "scam_intercept_rate": 1.0,
+          "honest_interventions": 494,
+          "honest_intervention_rate": 0.011606870139329433,
+          "scam_miss_rate_95ci": [
+            6.938893903907228e-18,
+            0.12455903714463581
+          ]
+        },
+        "25-44": {
+          "rows": 84857,
+          "scam_count": 66,
+          "scam_misses": 2,
+          "scam_miss_rate": 0.030303030303030304,
+          "scam_intercept_rate": 0.9696969696969697,
+          "honest_interventions": 861,
+          "honest_intervention_rate": 0.010154379592173697,
+          "scam_miss_rate_95ci": [
+            0.008349735075946503,
+            0.10392718870586834
+          ]
+        },
+        "45-59": {
+          "rows": 34097,
+          "scam_count": 0,
+          "scam_misses": 0,
+          "scam_miss_rate": null,
+          "scam_intercept_rate": null,
+          "honest_interventions": 357,
+          "honest_intervention_rate": 0.01047012933689181,
+          "scam_miss_rate_95ci": [
+            null,
+            null
+          ]
+        },
+        "60+": {
+          "rows": 16601,
+          "scam_count": 10,
+          "scam_misses": 0,
+          "scam_miss_rate": 0.0,
+          "scam_intercept_rate": 1.0,
+          "honest_interventions": 170,
+          "honest_intervention_rate": 0.010246519197155085,
+          "scam_miss_rate_95ci": [
+            0.0,
+            0.2775401687666166
+          ]
+        }
+      },
+      "eligible_group_count": 2,
+      "scam_miss_rate_gap": 0.030303030303030304,
+      "gate_percentage_points": 3.0,
+      "gate": "review"
+    },
+    "cohort_language": {
+      "groups": {
+        "en": {
+          "rows": 35579,
+          "scam_count": 10,
+          "scam_misses": 0,
+          "scam_miss_rate": 0.0,
+          "scam_intercept_rate": 1.0,
+          "honest_interventions": 380,
+          "honest_intervention_rate": 0.010683460316567799,
+          "scam_miss_rate_95ci": [
+            0.0,
+            0.2775401687666166
+          ]
+        },
+        "hi": {
+          "rows": 48981,
+          "scam_count": 37,
+          "scam_misses": 1,
+          "scam_miss_rate": 0.02702702702702703,
+          "scam_intercept_rate": 0.972972972972973,
+          "honest_interventions": 526,
+          "honest_intervention_rate": 0.010746976135992155,
+          "scam_miss_rate_95ci": [
+            0.004786851054907726,
+            0.13824378437563367
+          ]
+        },
+        "other": {
+          "rows": 17497,
+          "scam_count": 10,
+          "scam_misses": 0,
+          "scam_miss_rate": 0.0,
+          "scam_intercept_rate": 1.0,
+          "honest_interventions": 168,
+          "honest_intervention_rate": 0.009607136730142391,
+          "scam_miss_rate_95ci": [
+            0.0,
+            0.2775401687666166
+          ]
+        },
+        "te": {
+          "rows": 76086,
+          "scam_count": 46,
+          "scam_misses": 1,
+          "scam_miss_rate": 0.021739130434782608,
+          "scam_intercept_rate": 0.9782608695652174,
+          "honest_interventions": 808,
+          "honest_intervention_rate": 0.0106259863229879,
+          "scam_miss_rate_95ci": [
+            0.0038477551112426345,
+            0.11335554494333024
+          ]
+        }
+      },
+      "eligible_group_count": 2,
+      "scam_miss_rate_gap": 0.0052878965922444204,
+      "gate_percentage_points": 3.0,
+      "gate": "pass"
+    },
+    "cohort_phone_type": {
+      "groups": {
+        "android_entry": {
+          "rows": 63697,
+          "scam_count": 30,
+          "scam_misses": 1,
+          "scam_miss_rate": 0.03333333333333333,
+          "scam_intercept_rate": 0.9666666666666667,
+          "honest_interventions": 697,
+          "honest_intervention_rate": 0.010947586661849938,
+          "scam_miss_rate_95ci": [
+            0.0059084379948573795,
+            0.16670751396958874
+          ]
+        },
+        "android_mid": {
+          "rows": 68562,
+          "scam_count": 17,
+          "scam_misses": 0,
+          "scam_miss_rate": 0.0,
+          "scam_intercept_rate": 1.0,
+          "honest_interventions": 725,
+          "honest_intervention_rate": 0.010576993216135385,
+          "scam_miss_rate_95ci": [
+            0.0,
+            0.18432366037156456
+          ]
+        },
+        "android_premium": {
+          "rows": 31744,
+          "scam_count": 49,
+          "scam_misses": 1,
+          "scam_miss_rate": 0.02040816326530612,
+          "scam_intercept_rate": 0.9795918367346939,
+          "honest_interventions": 307,
+          "honest_intervention_rate": 0.009686070358100646,
+          "scam_miss_rate_95ci": [
+            0.003611579538530696,
+            0.10693768467754147
+          ]
+        },
+        "ios": {
+          "rows": 14140,
+          "scam_count": 7,
+          "scam_misses": 0,
+          "scam_miss_rate": 0.0,
+          "scam_intercept_rate": 1.0,
+          "honest_interventions": 153,
+          "honest_intervention_rate": 0.010825727021863723,
+          "scam_miss_rate_95ci": [
+            0.0,
+            0.35433884297520657
+          ]
+        }
+      },
+      "eligible_group_count": 2,
+      "scam_miss_rate_gap": 0.012925170068027212,
+      "gate_percentage_points": 3.0,
+      "gate": "pass"
+    }
+  },
+  "limits": [
+    "Synthetic cohort distributions are not demographic evidence.",
+    "A 3-point gate is descriptive only; it is not a fairness certification.",
+    "Groups below the support threshold are shown but not scored against the gap gate."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "maya-candidate-fast-path-v1",
+  "split": "test",
+  "transactions_sha256": "ddb53fa8f12671a5a2c584e8852a72b0abc45daafe4f95659841d8a98aad337e",
+  "definition": {
+    "known_payee": "prior successful transaction by same sender to same receiver in this generated file",
+    "amount_cap_inr": 2000
+  },
+  "transactions": 178143,
+  "eligible_count": 108461,
+  "eligible_share": 0.6088423345290019,
+  "eligible_scam_count": 6,
+  "total_scam_count": 103,
+  "share_of_scam_transactions_bypassed": 0.05825242718446602,
+  "decision": "measurement only; fast-path bypass is not enabled",
+  "limitations": [
+    "Synthetic dataset only.",
+    "Equal timestamps are ordered by transaction id and count as prior only when earlier in that order.",
+    "Does not establish a safe bank production bypass threshold."
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "schema": "maya-synthetic-cold-start-v1",
+  "split": "test",
+  "buckets": {
+    "0-9 days": {
+      "rows": 0,
+      "honest": 0,
+      "scams": 0,
+      "honest_unsure_share": null,
+      "honest_nudge_share": null,
+      "honest_hold_share": null,
+      "scam_miss_count": 0,
+      "scam_miss_rate": null
+    },
+    "10-29 days": {
+      "rows": 0,
+      "honest": 0,
+      "scams": 0,
+      "honest_unsure_share": null,
+      "honest_nudge_share": null,
+      "honest_hold_share": null,
+      "scam_miss_count": 0,
+      "scam_miss_rate": null
+    },
+    "30-59 days": {
+      "rows": 1104,
+      "honest": 1104,
+      "scams": 0,
+      "honest_unsure_share": 0.014492753623188406,
+      "honest_nudge_share": 0.002717391304347826,
+      "honest_hold_share": 0.01177536231884058,
+      "scam_miss_count": 0,
+      "scam_miss_rate": null
+    },
+    "60+ days": {
+      "rows": 177039,
+      "honest": 176936,
+      "scams": 103,
+      "honest_unsure_share": 0.010523579147262287,
+      "honest_nudge_share": 0.00463444409277931,
+      "honest_hold_share": 0.005911742098837998,
+      "scam_miss_count": 2,
+      "scam_miss_rate": 0.019417475728155338
+    }
+  },
+  "source_fingerprints": {
+    "features_sha256": "336c08a68cee0f0d84e2bcbd43cfe276b491dda7c9e05ca6f911b2004f568d57",
+    "transactions_sha256": "ddb53fa8f12671a5a2c584e8852a72b0abc45daafe4f95659841d8a98aad337e"
+  },
+  "model_sha256": "d3263873885c9e75d08d43321b29bc95297d1327b10d3bacf0c6b2040876951d",
+  "definition": "Account tenure is derived from synthetic account creation day; rows are scored from the later-day test split.",
+  "limits": [
+    "Same generator family; not a real newly onboarded customer study.",
+    "Do not add a cold-start auto-hold. Thin history should produce readable advice and a measured uncertainty limit."
+  ],
+  "zero_history_probe": {
+    "status": "measured",
+    "worlds": 64,
+    "seed": 43001,
+    "endpoint_history_events": {
+      "min": 0,
+      "max": 0,
+      "zero_history_worlds": 64
+    },
+    "model_sha256": "c5b7cfcf5bdd610cf676b3868cd58f0c8b3be5157e0ec216753abe6a3f3e3e39",
+    "calibration_sha256": "649a92d636fc9287ad67c2adf328f5c8aaf86dac28adef455c034805d6de5ebc",
+    "probability_range": [
+      0.37655800580978394,
+      0.37655800580978394
+    ],
+    "uncertainty_sets": {
+      "{fine}": 64
+    },
+    "policy_actions": {
+      "neutral": {
+        "nudge": 64
+      },
+      "refund_claim": {
+        "nudge": 64
+      }
+    },
+    "definition": "Each generated everyday world supplies a sender and recipient with zero prior endpoint payment events. The same live wallet model, online feature snapshot, conformal result and policy are used. The neutral and consented refund-claim variants are advice-flow probes; no scam labels or accuracy are inferred.",
+    "limits": [
+      "This is a deterministic synthetic zero-history exercise, not a cohort study of new UPI users.",
+      "The message claim changes policy context only; it is not evidence that a real refund or payment is genuine.",
+      "No sandbox balance is changed by this report."
+    ]
+  }
+}

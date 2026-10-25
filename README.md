@@ -1,5 +1,71 @@
 # MAYA
 
+## V4 customer product
+
+The current product is a mobile customer app, an independently paired judge view,
+a recipient view and a server-owned dummy ledger. Use `run_demo.py`; the older
+Streamlit and `src/api.py` entrypoints below remain research examples.
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe scripts/bootstrap_v4.py
+.\.venv\Scripts\python.exe scripts/train_wallet_bundle.py
+.\.venv\Scripts\python.exe run_demo.py
+```
+
+Open `http://127.0.0.1:8000/app/`. Pair `/demo/` and `/recipient/` in separate
+browsers using the codes from the customer payment screen. Dummy payment success
+comes from committed ledger state. No real money, bank credentials or government
+report submission are involved.
+
+See [Docker/HTTPS deployment](docs/DEPLOY_V4.md), [release status and limits](docs/V4_RELEASE_STATUS.md)
+and [frozen evidence](docs/evidence). A public deployment requires a hosting
+account/server and hostname. No bank-ready or national-throughput claim is made.
+
+For the audit response, see the [rubric delivery matrix](docs/RUBRIC_DELIVERY.md),
+[shadow-pilot blueprint](docs/MAYA_PILOT_BLUEPRINT.md), [six-minute judge runbook](docs/JUDGE_RUNBOOK.md)
+and [asset/contribution ledger](docs/CONTRIBUTION_LEDGER.md). The [evidence rebuild guide](docs/EVIDENCE_REPRODUCTION.md)
+lists commands, data boundaries and limitations for reproducing the frozen reports.
+The latest generated-event kit is 20/24; it names spaced-probe and slow-drip misses.
+The age fairness slice is flagged for review, and all generated metrics remain
+simulator evidence rather than real-UPI performance claims.
+
+The public companion sends derived intent only; raw message parsing stays in the
+browser. It abstains from behavioral scoring without bank history. The sandbox,
+public PaySim benchmark and partner-model contracts are separate sources.
+
+## Background & Field Research
+
+MAYA's merchant-safety priorities were informed by visits to around 10 street
+vendors, fruit sellers and kirana stores around the NIT Warangal campus. These
+conversations and observations grounded the project in the conditions small
+merchants face while accepting UPI payments.
+
+Recurring concerns included dependence on soundboxes for payment confirmation,
+connectivity interruptions, fake payment claims and phishing SMS reaching
+vendors' phones. Together, these findings point to a practical need: make payment
+status clear and help merchants recognize suspicious claims and messages without
+adding friction to everyday transactions.
+
+![ ](docs/field-research/vendor-kirana-visit.png)
+
+*Field visit at a neighborhood kirana store near NIT Warangal.*
+
+![ ](docs/field-research/street-vendor-visit.png)
+
+*Field visit at a streetside vendor stall near NIT Warangal.*
+
+## Run the generated-event spot-check
+
+After building `models/wallet/` with `scripts/train_wallet_bundle.py`, run
+`python scripts/run_kit.py`. Each invocation creates fresh synthetic event
+histories; use `--seed N` to reproduce a run. Its 24 cases are authored policy
+checks, not a real-world accuracy estimate. The current frozen run is
+[`docs/evidence/kit.json`](docs/evidence/kit.json). See [the rubric matrix](docs/RUBRIC_DELIVERY.md)
+for known misses and the additional evidence still required.
+
+---
+
 Synthetic UPI scam-journey detector and Streamlit demonstration. The core uses
 past-only payment/recipient features, XGBoost, conformal prediction and a
 two-group intervention policy. No real payments or external fraud reports occur.

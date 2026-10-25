@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MAYA · Operator review</title>
+    <link rel="stylesheet" href="/product-static/product.css" />
+    <script type="module" src="operator.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="observer">
+      <header class="header">
+        <a class="brand" href="/app/">MAYA<span class="brand-dot">●</span></a>
+        <span class="badge">INDEPENDENT OPERATOR</span>
+      </header>
+      <main id="main" tabindex="-1">
+        <section id="login" class="card">
+          <p class="eyebrow">REVIEW ACCESS</p>
+          <h1>Operator sign-in</h1>
+          <form id="login-form">
+            <label for="operator-key">Operator key</label>
+            <input id="operator-key" type="password" autocomplete="current-password" required />
+            <button type="submit">Open review queue</button>
+          </form>
+          <p class="muted">The key stays in this tab’s memory and is cleared when the tab closes.</p>
+        </section>
+        <section id="queue-view" hidden>
+          <div class="row"><h1>Held payments</h1><button id="refresh" class="quiet">Refresh</button></div>
+          <p class="muted">Synthetic sandbox cases over INR 1 lakh. Approval does not bypass the hold timer.</p>
+          <section id="cases" class="stack"></section>
+          <h2>Decision audit</h2>
+          <section id="audit" class="stack"></section>
+        </section>
+        <p id="message" class="error" role="status" hidden></p>
+      </main>
+    </div>
+  </body>
+</html>

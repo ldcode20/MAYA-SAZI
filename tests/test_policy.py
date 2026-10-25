@@ -42,6 +42,15 @@ class HoldSafeguardTests(unittest.TestCase):
         soft = dict(chat_stage="payment_demand", is_screen_shared=True, is_voice_active=True)
         self.assertEqual(decide("{scam}", features, soft)["action"], "nudge")
 
+    def test_reported_payee_and_mule_verdict_are_one_group(self):
+        # Correlated recipient evidence alone does not satisfy the two-group rule.
+        features = dict(n_t=0, e_t=0, z_t=0, pi_t=0, d_R=0)
+        self.assertEqual(decide(UNSURE, features, amount=900,
+                                mulehunter_status="mule")["action"], "nudge")
+        features["z_t"] = 3  # independent payment-history evidence
+        self.assertEqual(decide(UNSURE, features, amount=900,
+                                mulehunter_status="mule")["action"], "hold")
+
     def test_analyst_threshold_is_strict(self):
         features = dict(n_t=0, e_t=2, z_t=0, pi_t=0, d_R=0)
         for amount in (99_999, 100_000, 100_001):
